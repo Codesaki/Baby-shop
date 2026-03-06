@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
-const Landing = () => {
+const Landing = ({ featuredProducts, newArrivals, popularProducts, categories }) => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -29,33 +29,6 @@ const Landing = () => {
         { name: 'Facebook', href: 'https://facebook.com' },
         { name: 'Instagram', href: 'https://instagram.com' },
         { name: 'YouTube', href: 'https://youtube.com' },
-    ];
-
-    const categories = [
-        {
-            id: 1,
-            name: 'Clothing',
-            iconClass: 'fa-solid fa-tshirt',
-            image: 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc338?w=500&h=500&fit=crop',
-        },
-        {
-            id: 2,
-            name: 'Toys & Games',
-            iconClass: 'fa-solid fa-puzzle-piece',
-            image: 'https://images.unsplash.com/photo-1565110677539-8d5b1b4a7b0a?w=500&h=500&fit=crop',
-        },
-        {
-            id: 3,
-            name: 'Feeding',
-            iconClass: 'fa-solid fa-bottle-droplet',
-            image: 'https://images.unsplash.com/photo-1606777553958-d7221c2c38ac?w=500&h=500&fit=crop',
-        },
-        {
-            id: 4,
-            name: 'Nursery',
-            iconClass: 'fa-solid fa-bed',
-            image: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d049?w=500&h=500&fit=crop',
-        },
     ];
 
     const features = [
@@ -86,16 +59,9 @@ const Landing = () => {
     ];
 
     // Mobile-first content data
-    const featuredProducts = [
-        { id: 1, name: 'Organic Cotton Onesie', price: '$24', image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&h=800&fit=crop' },
-        { id: 2, name: 'Wooden Rattle Toy', price: '$18', image: 'https://images.unsplash.com/photo-1602526433784-0b8f6c0e1a4c?w=800&h=800&fit=crop' },
-        { id: 3, name: 'Silicone Bib Set', price: '$15', image: 'https://images.unsplash.com/photo-1604472917789-7d6e6c6d6b1a?w=800&h=800&fit=crop' },
-    ];
-
-    const newArrivals = [
-        { id: 1, name: 'Monthly Milestone Book', price: '$12', image: 'https://images.unsplash.com/photo-1545060894-3b6f63f9b30b?w=800&h=800&fit=crop' },
-        { id: 2, name: 'Mini Plush', price: '$22', image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=800&h=800&fit=crop' },
-    ];
+    // featured products and new arrivals come from props
+    const featuredProductsData = featuredProducts || [];
+    const newArrivalsData = newArrivals || [];
 
     const instagramImages = [
         'https://images.unsplash.com/photo-1516685018646-549b5b3c3f0d?w=800&h=800&fit=crop',
@@ -213,16 +179,17 @@ const Landing = () => {
                     <div className="px-5 py-5 bg-white">
                         <h1 className="text-2xl font-bold mb-2">Everything for Your Little One</h1>
                         <p className="text-sm text-light-700 mb-4">Curated essentials for newborns and parents. Fast shipping & safe materials.</p>
-                        <div className="space-y-3">
-                            <button className="w-full px-4 py-3 bg-primary-500 text-white rounded-lg font-semibold">Shop Newborn Essentials</button>
-                            <button className="w-full px-4 py-3 bg-light-200 text-light-900 rounded-lg">Browse Categories</button>
+                        {/* responsive layout: vertical on mobile, horizontal at md+ */}
+                        <div className="space-y-3 md:flex md:space-y-0 md:justify-center md:space-x-4">
+                            <button className="w-full md:w-1/3 px-4 py-3 bg-primary-500 text-white rounded-lg font-semibold">Shop Newborn Essentials</button>
+                            <button className="w-full md:w-1/3 px-4 py-3 bg-light-200 text-light-900 rounded-lg">Browse Categories</button>
                         </div>
                     </div>
                 </section>
 
                 {/* Quick Category Scroller */}
                 <section className="py-4 px-4">
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:justify-center">
                         {navLinks.map((link) => (
                             <button key={link.name} className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-white border border-light-200 rounded-full shadow-sm">
                                 <i className="fa-solid fa-circle-dot text-primary-500"></i>
@@ -234,17 +201,22 @@ const Landing = () => {
 
                 {/* Category Grid (2 columns) */}
                 <section className="px-4 pb-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        {navLinks.map((link, idx) => (
-                            <a key={link.name} href="#" className="block rounded-xl overflow-hidden shadow-soft-lg">
-                                <div className="h-44 bg-gray-100 w-full">
-                                    <img src={`https://source.unsplash.com/collection/190727/800x600?sig=${idx}`} alt={link.name} className="w-full h-full object-cover" />
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categories && categories.length > 0 ? categories.map((category) => (
+                            <Link key={category.id} href={route('categories.show', category.slug)} className="block rounded-xl overflow-hidden shadow-soft-lg hover:shadow-soft-xl transition-shadow">
+                                <div className="h-44 bg-gradient-to-br from-primary-100 to-primary-200 w-full flex items-center justify-center">
+                                    <div className="text-center">
+                                        <i className="fa-solid fa-tag text-4xl text-primary-600 mb-2"></i>
+                                        <div className="text-primary-800 font-semibold">{category.products_count} products</div>
+                                    </div>
                                 </div>
                                 <div className="p-3 bg-white">
-                                    <h3 className="font-semibold">{link.name}</h3>
+                                    <h3 className="font-semibold text-center">{category.name}</h3>
                                 </div>
-                            </a>
-                        ))}
+                            </Link>
+                        )) : (
+                            <div className="col-span-full text-center py-8 text-light-700">No categories available</div>
+                        )}
                     </div>
                 </section>
 
@@ -252,29 +224,40 @@ const Landing = () => {
                 <section className="px-4 pb-6">
                     <h3 className="text-lg font-bold mb-3 px-1">Popular Right Now</h3>
                     <div className="flex gap-4 overflow-x-auto pb-3 px-1">
-                        {featuredProducts.map((p) => (
-                            <div key={p.id} className="min-w-[60%] sm:min-w-[40%] bg-white rounded-lg shadow-sm overflow-hidden">
-                                <div className="h-44 bg-gray-100">
-                                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="p-3">
-                                    <h4 className="font-medium text-sm line-clamp-2">{p.name}</h4>
-                                    <div className="flex items-center justify-between mt-3">
-                                        <span className="font-bold">{p.price}</span>
-                                        <div className="flex items-center gap-2">
-                                            <button className="px-3 py-1 bg-primary-500 text-white rounded-md">Add</button>
-                                            <button className="text-light-700"><i className="fa-regular fa-heart"></i></button>
+                        {featuredProductsData.length > 0 ? (
+                            featuredProductsData.map((p) => (
+                                <Link key={p.id} href={route('products.show', p.slug)} className="block min-w-[60%] sm:min-w-[40%] lg:min-w-[20%] bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                                    <div className="h-44 bg-gray-100">
+                                        <img src={p.images && p.images.length ? `/storage/${p.images[0].image_path}` : ''} alt={p.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="p-3">
+                                        <h4 className="font-medium text-sm line-clamp-2">{p.name}</h4>
+                                        <p className="text-sm text-light-700 line-clamp-2">{p.short_description}</p>
+                                        <div className="flex items-center justify-between mt-3">
+                                            <span className="font-bold text-primary-600">
+                                                {p.discount_price && p.discount_price < p.price ? (
+                                                    <>
+                                                        <span className="text-red-600">${p.discount_price}</span>
+                                                        <span className="text-gray-500 line-through text-sm ml-2">${p.price}</span>
+                                                    </>
+                                                ) : (
+                                                    <span>${p.price || 'Price TBD'}</span>
+                                                )}
+                                            </span>
+                                            <button className="flex-1 ml-2 px-3 py-1 bg-primary-500 text-white rounded-md text-sm">View</button>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
+                                </Link>
+                            ))
+                        ) : (
+                            <div className="w-full text-center py-8 text-light-700">No featured products available yet</div>
+                        )}
                     </div>
                 </section>
 
                 {/* Trust Strip */}
                 <section className="px-4 pb-6">
-                    <div className="bg-[#fff7ed] rounded-lg p-4 space-y-3">
+                    <div className="bg-[#fff7ed] rounded-lg p-4 space-y-3 md:space-y-0 md:flex md:justify-center md:gap-6">
                         <div className="flex items-start gap-3">
                             <i className="fa-solid fa-shield-halved text-primary-500 mt-1"></i>
                             <div>
@@ -303,20 +286,34 @@ const Landing = () => {
                 <section className="px-4 pb-6">
                     <h3 className="text-lg font-bold mb-3 px-1">New Arrivals</h3>
                     <div className="flex gap-4 overflow-x-auto pb-3 px-1">
-                        {newArrivals.map((p) => (
-                            <div key={p.id} className="min-w-[60%] sm:min-w-[40%] bg-white rounded-lg shadow-sm overflow-hidden">
-                                <div className="h-44 bg-gray-100">
-                                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="p-3">
-                                    <h4 className="font-medium text-sm line-clamp-2">{p.name}</h4>
-                                    <div className="flex items-center justify-between mt-3">
-                                        <span className="font-bold">{p.price}</span>
-                                        <button className="px-3 py-1 bg-primary-500 text-white rounded-md">Add</button>
+                        {newArrivalsData.length > 0 ? (
+                            newArrivals.map((p) => (
+                                <Link key={p.id} href={route('products.show', p.slug)} className="block min-w-[60%] sm:min-w-[40%] lg:min-w-[20%] bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                                    <div className="h-44 bg-gray-100">
+                                        <img src={p.images && p.images.length ? `/storage/${p.images[0].image_path}` : ''} alt={p.name} className="w-full h-full object-cover" />
                                     </div>
-                                </div>
-                            </div>
-                        ))}
+                                    <div className="p-3">
+                                        <h4 className="font-medium text-sm line-clamp-2">{p.name}</h4>
+                                        <p className="text-sm text-light-700 line-clamp-1">{p.short_description}</p>
+                                        <div className="flex items-center justify-between mt-3">
+                                            <span className="font-bold text-primary-600">
+                                                {p.discount_price && p.discount_price < p.price ? (
+                                                    <>
+                                                        <span className="text-red-600">${p.discount_price}</span>
+                                                        <span className="text-gray-500 line-through text-sm ml-2">${p.price}</span>
+                                                    </>
+                                                ) : (
+                                                    <span>${p.price || 'Price TBD'}</span>
+                                                )}
+                                            </span>
+                                            <button className="px-3 py-1 bg-primary-500 text-white rounded-md text-sm">View</button>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            <div className="w-full text-center py-8 text-light-700">No products available</div>
+                        )}
                     </div>
                 </section>
 
@@ -327,7 +324,7 @@ const Landing = () => {
                         <div className="p-4">
                             <h3 className="text-xl font-bold">Care for Mom Too</h3>
                             <p className="text-sm text-light-700 my-2">Comfortable essentials and self-care items for new mothers.</p>
-                            <button className="w-full px-4 py-3 bg-primary-500 text-white rounded-lg">Shop Mommy Essentials</button>
+                            <button className="w-full lg:w-auto lg:max-w-[20%] px-4 py-3 bg-primary-500 text-white rounded-lg">Shop Mommy Essentials</button>
                         </div>
                     </div>
                 </section>

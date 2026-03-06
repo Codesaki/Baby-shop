@@ -1,0 +1,169 @@
+import React, { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
+
+const Show = ({ product }) => {
+    const [selectedImage, setSelectedImage] = useState(0);
+    const [quantity, setQuantity] = useState(1);
+
+    const images = product.images || [];
+    const currentImage = images[selectedImage];
+
+    const displayPrice = product.discount_price && product.discount_price < product.price
+        ? product.discount_price
+        : product.price;
+
+    const originalPrice = product.discount_price && product.discount_price < product.price
+        ? product.price
+        : null;
+
+    return (
+        <>
+            <Head title={product.name} />
+
+            <div className="min-h-screen bg-gray-50">
+                {/* Breadcrumb */}
+                <div className="bg-white border-b">
+                    <div className="max-w-7xl mx-auto px-4 py-3">
+                        <nav className="text-sm text-gray-600">
+                            <Link href="/" className="hover:text-primary-600">Home</Link>
+                            <span className="mx-2">/</span>
+                            <Link href={`/categories/${product.category.slug}`} className="hover:text-primary-600">
+                                {product.category.name}
+                            </Link>
+                            <span className="mx-2">/</span>
+                            <span className="text-gray-900">{product.name}</span>
+                        </nav>
+                    </div>
+                </div>
+
+                <div className="max-w-7xl mx-auto px-4 py-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Product Images */}
+                        <div className="space-y-4">
+                            {/* Main Image */}
+                            <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm">
+                                {currentImage ? (
+                                    <img
+                                        src={`/storage/${currentImage.image_path}`}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                        <span className="text-gray-400">No image</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Thumbnail Gallery */}
+                            {images.length > 1 && (
+                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                    {images.map((image, index) => (
+                                        <button
+                                            key={image.id}
+                                            onClick={() => setSelectedImage(index)}
+                                            className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
+                                                selectedImage === index ? 'border-primary-500' : 'border-gray-200'
+                                            }`}
+                                        >
+                                            <img
+                                                src={`/storage/${image.image_path}`}
+                                                alt={`${product.name} ${index + 1}`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="space-y-6">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                                <p className="text-sm text-gray-600">SKU: {product.sku}</p>
+                            </div>
+
+                            {/* Price */}
+                            <div className="flex items-center gap-3">
+                                <span className="text-3xl font-bold text-primary-600">
+                                    ${displayPrice}
+                                </span>
+                                {originalPrice && (
+                                    <span className="text-xl text-gray-500 line-through">
+                                        ${originalPrice}
+                                    </span>
+                                )}
+                                {originalPrice && (
+                                    <span className="px-2 py-1 bg-red-100 text-red-600 text-sm rounded">
+                                        Save ${(originalPrice - displayPrice).toFixed(2)}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Stock Status */}
+                            <div className="flex items-center gap-2">
+                                {product.quantity > 0 ? (
+                                    <>
+                                        <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                                        <span className="text-green-600 font-medium">In Stock ({product.quantity} available)</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                                        <span className="text-red-600 font-medium">Out of Stock</span>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Quantity Selector */}
+                            {product.quantity > 0 && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-4">
+                                        <label className="font-medium">Quantity:</label>
+                                        <div className="flex items-center border rounded">
+                                            <button
+                                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                                className="px-3 py-2 hover:bg-gray-100"
+                                            >
+                                                -
+                                            </button>
+                                            <span className="px-4 py-2 border-x">{quantity}</span>
+                                            <button
+                                                onClick={() => setQuantity(Math.min(product.quantity, quantity + 1))}
+                                                className="px-3 py-2 hover:bg-gray-100"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Add to Cart Button */}
+                                    <button className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition-colors">
+                                        Add to Cart - ${(displayPrice * quantity).toFixed(2)}
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Short Description */}
+                            <div>
+                                <h3 className="font-semibold text-lg mb-2">Overview</h3>
+                                <p className="text-gray-700">{product.short_description}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Long Description */}
+                    <div className="mt-12 max-w-4xl">
+                        <h2 className="text-2xl font-bold mb-6">Description</h2>
+                        <div className="prose max-w-none">
+                            <p className="text-gray-700 whitespace-pre-line">{product.long_description}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+};
+
+export default Show;
