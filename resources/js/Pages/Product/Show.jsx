@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import MainLayout from '@/Layouts/MainLayout';
 
 const Show = ({ product }) => {
     const [selectedImage, setSelectedImage] = useState(0);
-    const [quantity, setQuantity] = useState(1);
+    // quantity is managed via useForm below
 
     const images = product.images || [];
     const currentImage = images[selectedImage];
+    const flash = usePage().props.flash || {};
 
     const displayPrice = product.discount_price && product.discount_price < product.price
         ? product.discount_price
@@ -16,12 +18,34 @@ const Show = ({ product }) => {
         ? product.price
         : null;
 
+    const { data, setData, post, processing } = useForm({
+        product_id: product.id,
+        variant_id: product.default_variant_id || null,
+        quantity: 1,
+    });
+
+    const handleAddToCart = (e) => {
+        e.preventDefault();
+        post(route('cart.store'), {
+            onSuccess: () => {
+                // optionally show toast notification
+            }
+        });
+    };
+
     return (
         <>
             <Head title={product.name} />
 
-            <div className="min-h-screen bg-gray-50">
+            <MainLayout>
                 {/* Breadcrumb */}
+                {flash.success && (
+                    <div className="max-w-7xl mx-auto px-4 py-4">
+                        <div className="bg-green-100 text-green-800 p-3 rounded-lg border border-green-200">
+                            {flash.success}
+                        </div>
+                    </div>
+                )}
                 <div className="bg-white border-b">
                     <div className="max-w-7xl mx-auto px-4 py-3">
                         <nav className="text-sm text-gray-600">
@@ -123,14 +147,16 @@ const Show = ({ product }) => {
                                         <label className="font-medium">Quantity:</label>
                                         <div className="flex items-center border rounded">
                                             <button
-                                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                                type="button"
+                                                onClick={() => setData('quantity', Math.max(1, data.quantity - 1))}
                                                 className="px-3 py-2 hover:bg-gray-100"
                                             >
                                                 -
                                             </button>
-                                            <span className="px-4 py-2 border-x">{quantity}</span>
+                                            <span className="px-4 py-2 border-x">{data.quantity}</span>
                                             <button
-                                                onClick={() => setQuantity(Math.min(product.quantity, quantity + 1))}
+                                                type="button"
+                                                onClick={() => setData('quantity', Math.min(product.quantity, data.quantity + 1))}
                                                 className="px-3 py-2 hover:bg-gray-100"
                                             >
                                                 +
@@ -139,8 +165,12 @@ const Show = ({ product }) => {
                                     </div>
 
                                     {/* Add to Cart Button */}
-                                    <button className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition-colors">
-                                        Add to Cart - ${(displayPrice * quantity).toFixed(2)}
+                                    <button
+                                        onClick={handleAddToCart}
+                                        disabled={processing}
+                                        className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50"
+                                    >
+                                        {processing ? 'Adding...' : `Add to Cart - ${(displayPrice * data.quantity).toFixed(2)}`}
                                     </button>
                                 </div>
                             )}
@@ -161,7 +191,7 @@ const Show = ({ product }) => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </MainLayout>
         </>
     );
 };

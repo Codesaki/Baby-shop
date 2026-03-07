@@ -23,6 +23,12 @@ class Product extends Model
         'is_featured',
         'is_new_arrival',
         'is_popular',
+        'is_active',
+        'weight',
+        'brand',
+        'age_group',
+        'meta_title',
+        'meta_description',
         'created_by',
     ];
 
@@ -46,8 +52,33 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
 
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
     public function stockMovements()
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviews()->avg('rating') ?? 0;
+    }
+
+    public function getReviewCountAttribute()
+    {
+        return $this->reviews()->count();
     }
 }

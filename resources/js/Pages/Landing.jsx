@@ -1,9 +1,18 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import MainLayout from '@/Layouts/MainLayout';
 
 const Landing = ({ featuredProducts, newArrivals, popularProducts, categories }) => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const addToCartQuick = (productId) => {
+        router.post(route('cart.store'), { product_id: productId, quantity: 1 });
+    };
+
+    const navigate = (slug) => {
+        router.visit(route('products.show', slug));
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -82,95 +91,7 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
         <>
             <Head title="Welcome to Blimey Baby Shop" />
 
-            <div className="bg-white min-h-screen">
-                {/* Header */}
-                <header className="sticky top-0 z-50">
-                        {/* Socials Strip - Hidden on Mobile */}
-                        <div className="hidden md:block bg-light-600 text-white">
-                            <div className="max-w-7xl mx-auto px-4 py-2 flex justify-center gap-6">
-                                <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="TikTok">
-                                    <i className="fa-brands fa-tiktok"></i>
-                                </a>
-                                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="Facebook">
-                                    <i className="fa-brands fa-facebook-f"></i>
-                                </a>
-                                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="Instagram">
-                                    <i className="fa-brands fa-instagram"></i>
-                                </a>
-                                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="YouTube">
-                                    <i className="fa-brands fa-youtube"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        {/* Main Header */}
-                        <nav className={`transition-all duration-300 ${isScrolled ? 'bg-accent-500 shadow-soft-lg' : 'bg-transparent'}`}>
-                            <div className="max-w-7xl mx-auto px-4 py-4">
-                                {/* Top Row - Logo & Actions */}
-                                <div className="flex items-center justify-between">
-                                    {/* Logo */}
-                                    <Link href="/" className="flex-shrink-0">
-                                        <div className="font-architects text-3xl text-blue-600 leading-none">
-                                            Blimey
-                                            <div className="text-xs font-sans text-blue-600 -mt-1">Baby Shop</div>
-                                        </div>
-                                    </Link>
-
-                                    {/* Actions (Account/Cart/Hamburger) */}
-                                    <div className="flex items-center gap-4">
-                                        <button className="hidden md:flex items-center gap-2 text-light-900 hover:text-primary-600 transition-colors">
-                                            <i className="fa-solid fa-user"></i>
-                                            <span className="text-sm hidden lg:inline">Account</span>
-                                        </button>
-                                        <button className="flex items-center gap-2 text-light-900 hover:text-primary-600 transition-colors">
-                                            <i className="fa-solid fa-shopping-cart"></i>
-                                            <span className="text-sm hidden lg:inline">Cart</span>
-                                        </button>
-
-                                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden text-light-900 hover:text-primary-600 transition-colors" aria-label="Toggle menu">
-                                            <i className="fa-solid fa-bars"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Search (mobile-first): full width on small, centered and constrained on lg */}
-                                <div className="mt-3 flex justify-center">
-                                    <div className="w-full px-4 sm:px-0 max-w-full sm:max-w-xl lg:max-w-2xl">
-                                        <form className="flex items-center bg-white border border-light-200 rounded-full shadow-sm overflow-hidden">
-                                            <input aria-label="Search" type="text" placeholder="Search products..." className="flex-1 px-4 py-3 text-sm outline-none" />
-                                            <button type="submit" className="px-4 py-3 bg-primary-500 text-white rounded-r-full hover:bg-primary-600 transition-colors">
-                                                <i className="fa-solid fa-search"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                {/* Spacer between search and nav links */}
-                                <div className="mt-6" />
-
-                                {/* Navigation Links - Desktop */}
-                                <div className="hidden md:flex justify-center gap-8 mt-4">
-                                    {navLinks.map((link) => (
-                                        <a key={link.name} href={link.href} className="text-light-900 hover:text-primary-600 transition-colors font-medium text-sm">
-                                            {link.name}
-                                        </a>
-                                    ))}
-                                </div>
-
-                                {/* Mobile Menu */}
-                                {isMobileMenuOpen && (
-                                    <div className="md:hidden mt-4 pb-4 border-t border-light-200">
-                                        {navLinks.map((link) => (
-                                            <a key={link.name} href={link.href} className="block py-3 text-light-900 hover:text-primary-600 transition-colors font-medium">
-                                                {link.name}
-                                            </a>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </nav>
-                </header>
-
+            <MainLayout>
                 {/* Mobile-first Hero */}
                 <section id="hero" className="min-h-[60vh] flex flex-col">
                     <div className="h-[55vh] w-full overflow-hidden rounded-b-2xl">
@@ -226,7 +147,7 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
                     <div className="flex gap-4 overflow-x-auto pb-3 px-1">
                         {featuredProductsData.length > 0 ? (
                             featuredProductsData.map((p) => (
-                                <Link key={p.id} href={route('products.show', p.slug)} className="block min-w-[60%] sm:min-w-[40%] lg:min-w-[20%] bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                                <div key={p.id} onClick={() => navigate(p.slug)} className="cursor-pointer block min-w-[60%] sm:min-w-[40%] lg:min-w-[20%] bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                                     <div className="h-44 bg-gray-100">
                                         <img src={p.images && p.images.length ? `/storage/${p.images[0].image_path}` : ''} alt={p.name} className="w-full h-full object-cover" />
                                     </div>
@@ -244,10 +165,18 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
                                                     <span>${p.price || 'Price TBD'}</span>
                                                 )}
                                             </span>
-                                            <button className="flex-1 ml-2 px-3 py-1 bg-primary-500 text-white rounded-md text-sm">View</button>
+                                            <div className="flex gap-2">
+                                                <Link href={route('products.show', p.slug)} className="px-3 py-1 bg-primary-500 text-white rounded-md text-sm">View</Link>
+                                                <button
+                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCartQuick(p.id); }}
+                                                    className="px-3 py-1 bg-green-500 text-white rounded-md text-sm"
+                                                >
+                                                    Add
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             ))
                         ) : (
                             <div className="w-full text-center py-8 text-light-700">No featured products available yet</div>
@@ -288,7 +217,7 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
                     <div className="flex gap-4 overflow-x-auto pb-3 px-1">
                         {newArrivalsData.length > 0 ? (
                             newArrivals.map((p) => (
-                                <Link key={p.id} href={route('products.show', p.slug)} className="block min-w-[60%] sm:min-w-[40%] lg:min-w-[20%] bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                                <div key={p.id} onClick={() => navigate(p.slug)} className="block min-w-[60%] sm:min-w-[40%] lg:min-w-[20%] bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
                                     <div className="h-44 bg-gray-100">
                                         <img src={p.images && p.images.length ? `/storage/${p.images[0].image_path}` : ''} alt={p.name} className="w-full h-full object-cover" />
                                     </div>
@@ -306,10 +235,18 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
                                                     <span>${p.price || 'Price TBD'}</span>
                                                 )}
                                             </span>
-                                            <button className="px-3 py-1 bg-primary-500 text-white rounded-md text-sm">View</button>
+                                            <div className="flex gap-2">
+                                                <Link href={route('products.show', p.slug)} className="px-3 py-1 bg-primary-500 text-white rounded-md text-sm">View</Link>
+                                                <button
+                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCartQuick(p.id); }}
+                                                    className="px-3 py-1 bg-green-500 text-white rounded-md text-sm"
+                                                >
+                                                    Add
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             ))
                         ) : (
                             <div className="w-full text-center py-8 text-light-700">No products available</div>
@@ -461,7 +398,7 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
                         </div>
                     </div>
                 </footer>
-            </div>
+            </MainLayout>
         </>
     );
 };

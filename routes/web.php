@@ -19,6 +19,25 @@ Route::get('/products/{product}', [ProductController::class, 'show'])->name('pro
 // category pages
 Route::get('/categories/{category}', [\App\Http\Controllers\CategoryController::class, 'show'])->name('categories.show');
 
+// cart routes
+Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+Route::post('/cart', [\App\Http\Controllers\CartController::class, 'store'])->name('cart.store');
+Route::patch('/cart/items/{item}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/items/{item}', [\App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
+Route::delete('/cart', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
+
+// checkout routes
+Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/checkout/success', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+
+// order routes
+Route::middleware('auth')->group(function () {
+    Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::patch('/orders/{order}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
+});
+
 // API helpers
 Route::get('/api/categories/{category}/sub-categories', [\App\Http\Controllers\Admin\CategoryController::class, 'subCategories']);
 
@@ -54,6 +73,11 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])
         Route::patch('products/{id}', [AdminProductController::class, 'update']);
         Route::delete('products/{id}', [AdminProductController::class, 'destroy'])->name('products.destroy');
         Route::get('products/{id}/stock', [AdminProductController::class, 'addStock'])->name('products.stock');
+
+        // orders
+        Route::get('orders', [\App\Http\Controllers\OrderController::class, 'adminIndex'])->name('orders.index');
+        Route::get('orders/{order}', [\App\Http\Controllers\OrderController::class, 'adminShow'])->name('orders.show');
+        Route::patch('orders/{order}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('orders.update-status');
     });
 
 require __DIR__.'/auth.php';

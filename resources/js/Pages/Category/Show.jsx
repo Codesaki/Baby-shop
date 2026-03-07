@@ -1,13 +1,25 @@
-import { Head, Link } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import GuestLayout from '@/Layouts/GuestLayout';
+import { Head, Link, usePage, router } from '@inertiajs/react';
+import MainLayout from '@/Layouts/MainLayout';
 
-export default function Show({ auth, category, products }) {
-    const Layout = auth.user ? AuthenticatedLayout : GuestLayout;
+export default function Show({ category, products }) {
+    const Layout = MainLayout;
+
+    const flash = usePage().props.flash || {};
+
+    const addToCartQuick = (productId) => {
+        router.post(route('cart.store'), { product_id: productId, quantity: 1 });
+    };
 
     return (
         <Layout>
             <Head title={`${category.name} - Baby Shop`} />
+            {flash.success && (
+                <div className="max-w-7xl mx-auto px-4 py-4">
+                    <div className="bg-green-100 text-green-800 p-3 rounded-lg border border-green-200">
+                        {flash.success}
+                    </div>
+                </div>
+            )}
 
             <div className="min-h-screen bg-light-50">
                 {/* Header */}
@@ -92,6 +104,12 @@ export default function Show({ auth, category, products }) {
                                                         : 'Out of Stock'
                                                     }
                                                 </span>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); addToCartQuick(product.id); }}
+                                                    className="px-2 py-1 bg-green-500 text-white rounded-md text-xs"
+                                                >
+                                                    Add
+                                                </button>
                                             </div>
                                         </div>
                                     </Link>
