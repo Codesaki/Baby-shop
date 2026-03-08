@@ -18,6 +18,13 @@ const Edit = ({ product, categories, subCategories }) => {
         images: []
     });
 
+    // form for adding stock using Inertia to include CSRF token automatically
+    const { data: stockData, setData: setStockData, patch: patchStock, processing: stockProcessing, errors: stockErrors } = useForm({
+        add_stock: 1,
+        stock_quantity: '',
+        stock_reference: ''
+    });
+
     const [subs, setSubs] = useState(subCategories || []);
 
     useEffect(() => {
@@ -197,19 +204,31 @@ const Edit = ({ product, categories, subCategories }) => {
             {/* stock addition */}
             <div className="mt-8">
                 <h2 className="text-xl font-semibold mb-2">Add Stock</h2>
-                <form method="POST" action={route('admin.products.update', product.id)} className="space-y-4 max-w-md">
-                    <input type="hidden" name="_method" value="PATCH" />
-                    <input type="hidden" name="add_stock" value="1" />
+                <form onSubmit={(e) => { e.preventDefault(); patchStock(route('admin.products.update', product.id)); }} className="space-y-4 max-w-md">
                     <div>
                         <label className="block text-sm font-medium">Quantity</label>
-                        <input type="number" name="stock_quantity" className="w-full border p-2 rounded" min="1" required />
+                        <input
+                            type="number"
+                            value={stockData.stock_quantity}
+                            onChange={e => setStockData('stock_quantity', e.target.value)}
+                            className="w-full border p-2 rounded"
+                            min="1"
+                            required
+                        />
+                        {stockErrors.stock_quantity && <div className="text-red-600 text-sm">{stockErrors.stock_quantity}</div>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium">Reference (optional)</label>
-                        <input type="text" name="stock_reference" className="w-full border p-2 rounded" />
+                        <input
+                            type="text"
+                            value={stockData.stock_reference}
+                            onChange={e => setStockData('stock_reference', e.target.value)}
+                            className="w-full border p-2 rounded"
+                        />
+                        {stockErrors.stock_reference && <div className="text-red-600 text-sm">{stockErrors.stock_reference}</div>}
                     </div>
                     <div>
-                        <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">
+                        <button type="submit" disabled={stockProcessing} className="px-4 py-2 bg-green-600 text-white rounded">
                             Add Stock
                         </button>
                     </div>

@@ -120,7 +120,7 @@ export default function Index({ auth, cart, items }) {
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-lg font-bold text-primary-600">
-                                                            ${(item.price * quantities[item.id]).toFixed(2)}
+                                                            Ksh {(item.price * quantities[item.id]).toFixed(2)}
                                                         </p>
                                                         <button
                                                             onClick={() => removeItem(item.id)}
@@ -153,7 +153,7 @@ export default function Index({ auth, cart, items }) {
                                     <div className="space-y-2 mb-4">
                                         <div className="flex justify-between">
                                             <span>Subtotal ({items.length} items)</span>
-                                            <span>${total.toFixed(2)}</span>
+                                            <span>Ksh {total.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span>Shipping</span>
@@ -164,7 +164,7 @@ export default function Index({ auth, cart, items }) {
                                     <div className="border-t pt-4">
                                         <div className="flex justify-between text-lg font-semibold">
                                             <span>Total</span>
-                                            <span>${total.toFixed(2)}</span>
+                                            <span>Ksh {total.toFixed(2)}</span>
                                         </div>
                                     </div>
 

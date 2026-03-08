@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import MainLayout from '@/Layouts/MainLayout';
 
 export default function Index({ orders }) {
     const getStatusColor = (status) => {
@@ -25,7 +25,7 @@ export default function Index({ orders }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <MainLayout>
             <Head title="My Orders - Baby Shop" />
 
             <div className="min-h-screen bg-light-50">
@@ -80,7 +80,7 @@ export default function Index({ orders }) {
                                         </div>
                                         <div className="text-right">
                                             <div className="text-lg font-semibold text-light-900">
-                                                ${order.total_amount.toFixed(2)}
+                                                Ksh {order.total_amount.toFixed(2)}
                                             </div>
                                             <div className="text-sm text-light-600">
                                                 {order.items.length} item{order.items.length !== 1 ? 's' : ''}
@@ -165,6 +165,6 @@ export default function Index({ orders }) {
                     )}
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </MainLayout>
     );
 }

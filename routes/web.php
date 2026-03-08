@@ -36,6 +36,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
+
+    // wishlist routes
+    Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist', [\App\Http\Controllers\WishlistController::class, 'store'])->name('wishlist.store');
+    Route::delete('/wishlist/{productId}', [\App\Http\Controllers\WishlistController::class, 'destroy'])->name('wishlist.destroy');
+    Route::post('/wishlist/add-to-cart', [\App\Http\Controllers\WishlistController::class, 'addToCart'])->name('wishlist.add-to-cart');
+
+    // transactions
+    Route::get('/transactions', [\App\Http\Controllers\TransactionController::class, 'index'])->name('transactions.index');
 });
 
 // API helpers
@@ -79,5 +88,8 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])
         Route::get('orders/{order}', [\App\Http\Controllers\OrderController::class, 'adminShow'])->name('orders.show');
         Route::patch('orders/{order}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('orders.update-status');
     });
+
+Route::get('auth/google', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'handleGoogleCallback']);
 
 require __DIR__.'/auth.php';

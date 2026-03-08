@@ -3,56 +3,36 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Cart;
-use Illuminate\Http\RedirectResponse;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
-use Inertia\Inertia;
-use Inertia\Response;
+use Laravel\Socialite\Facades\Socialite;
 
-class AuthenticatedSessionController extends Controller
+class GoogleAuthController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(): Response
+    public function redirectToGoogle()
     {
-        return Inertia::render('Auth/Login', [
-            'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
-        ]);
+        return Socialite::driver('google')->redirect();
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(LoginRequest $request): RedirectResponse
+    public function handleGoogleCallback()
     {
-        $request->authenticate();
+        try {
+            $googleUser = Socialite::driver('google')->user();
 
-        $request->session()->regenerate();
+            $user = User::findOrCreateFromGoogle($googleUser);
 
-        // Merge guest cart to user cart
-        $this->mergeGuestCartToUserCart();
+            Auth::login($user);
 
-        return redirect()->intended(route('dashboard', absolute: false));
-    }
+            // Merge guest cart to user cart
+            $this->mergeGuestCartToUserCart();
 
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): RedirectResponse
-    {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
-
-        return redirect('/');
+            return redirect()->route('dashboard');
+        } catch (\Exception $e) {
+            return redirect()->route('login')->with('error', 'Google login failed');
+        }
     }
 
     private function mergeGuestCartToUserCart()

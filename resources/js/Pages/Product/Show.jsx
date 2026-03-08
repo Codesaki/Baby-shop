@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 
 const Show = ({ product }) => {
     const [selectedImage, setSelectedImage] = useState(0);
+    const [showLightbox, setShowLightbox] = useState(false);
     // quantity is managed via useForm below
 
     const images = product.images || [];
     const currentImage = images[selectedImage];
     const flash = usePage().props.flash || {};
 
-    const displayPrice = product.discount_price && product.discount_price < product.price
-        ? product.discount_price
-        : product.price;
+    const displayPrice = product.price - (product.discount_price || 0);
 
-    const originalPrice = product.discount_price && product.discount_price < product.price
-        ? product.price
-        : null;
+    const originalPrice = product.discount_price ? product.price : null;
 
     const { data, setData, post, processing } = useForm({
         product_id: product.id,
@@ -70,7 +67,8 @@ const Show = ({ product }) => {
                                     <img
                                         src={`/storage/${currentImage.image_path}`}
                                         alt={product.name}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                                        onClick={() => setShowLightbox(true)}
                                     />
                                 ) : (
                                     <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -111,16 +109,16 @@ const Show = ({ product }) => {
                             {/* Price */}
                             <div className="flex items-center gap-3">
                                 <span className="text-3xl font-bold text-primary-600">
-                                    ${displayPrice}
+                                    Ksh {displayPrice.toFixed(2)}
                                 </span>
                                 {originalPrice && (
                                     <span className="text-xl text-gray-500 line-through">
-                                        ${originalPrice}
+                                        Ksh {originalPrice}
                                     </span>
                                 )}
                                 {originalPrice && (
                                     <span className="px-2 py-1 bg-red-100 text-red-600 text-sm rounded">
-                                        Save ${(originalPrice - displayPrice).toFixed(2)}
+                                        Save Ksh {(originalPrice - displayPrice).toFixed(2)}
                                     </span>
                                 )}
                             </div>
@@ -165,13 +163,34 @@ const Show = ({ product }) => {
                                     </div>
 
                                     {/* Add to Cart Button */}
-                                    <button
-                                        onClick={handleAddToCart}
-                                        disabled={processing}
-                                        className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50"
-                                    >
-                                        {processing ? 'Adding...' : `Add to Cart - ${(displayPrice * data.quantity).toFixed(2)}`}
-                                    </button>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={handleAddToCart}
+                                            disabled={processing}
+                                            className="flex-1 bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {processing ? 'Adding...' : `Add to Cart - Ksh ${(displayPrice * data.quantity).toFixed(2)}`}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                // Add to wishlist logic
+                                                router.post(route('wishlist.store'), {
+                                                    product_id: product.id,
+                                                }, {
+                                                    preserveScroll: true,
+                                                    onSuccess: () => {
+                                                        // Show success message
+                                                    },
+                                                });
+                                            }}
+                                            className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                            title="Add to Wishlist"
+                                        >
+                                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
@@ -190,6 +209,57 @@ const Show = ({ product }) => {
                             <p className="text-gray-700 whitespace-pre-line">{product.long_description}</p>
                         </div>
                     </div>
+
+                    {/* Lightbox Modal */}
+                    {showLightbox && (
+                        <div 
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+                            onClick={() => setShowLightbox(false)}
+                        >
+                            <div 
+                                className="relative max-w-4xl max-h-[90vh] overflow-auto"
+                                onClick={e => e.stopPropagation()}
+                            >
+                                {currentImage && (
+                                    <img
+                                        src={`/storage/${currentImage.image_path}`}
+                                        alt={product.name}
+                                        className="w-full h-auto"
+                                    />
+                                )}
+                                <button
+                                    onClick={() => setShowLightbox(false)}
+                                    className="absolute top-4 right-4 bg-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                                >
+                                    <i className="fa-solid fa-times text-lg"></i>
+                                </button>
+                                
+                                {/* Image Navigation in Lightbox */}
+                                {images.length > 1 && (
+                                    <>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedImage(selectedImage === 0 ? images.length - 1 : selectedImage - 1);
+                                            }}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full w-12 h-12 flex items-center justify-center hover:bg-white transition-colors"
+                                        >
+                                            <i className="fa-solid fa-chevron-left"></i>
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedImage(selectedImage === images.length - 1 ? 0 : selectedImage + 1);
+                                            }}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full w-12 h-12 flex items-center justify-center hover:bg-white transition-colors"
+                                        >
+                                            <i className="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </MainLayout>
         </>

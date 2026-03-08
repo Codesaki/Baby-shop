@@ -50,7 +50,7 @@ export default function Show({ category, products }) {
                                         <div className="aspect-square overflow-hidden">
                                             {product.images && product.images.length > 0 ? (
                                                 <img
-                                                    src={`/storage/${product.images[0].path}`}
+                                                    src={`/storage/${product.images[0].image_path}`}
                                                     alt={product.name}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                                 />
@@ -69,21 +69,21 @@ export default function Show({ category, products }) {
 
                                             {/* Price */}
                                             <div className="mt-2 flex items-center space-x-2">
-                                                {product.discount_price && product.discount_price < product.price ? (
+                                                {product.discount_price ? (
                                                     <>
                                                         <span className="text-lg font-bold text-primary-600">
-                                                            ${product.discount_price}
+                                                            Ksh {(product.price - product.discount_price).toFixed(2)}
                                                         </span>
                                                         <span className="text-sm text-light-500 line-through">
-                                                            ${product.price}
+                                                            Ksh {product.price}
                                                         </span>
                                                         <span className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded">
-                                                            Save ${(product.price - product.discount_price).toFixed(2)}
+                                                            Save Ksh {product.discount_price.toFixed(2)}
                                                         </span>
                                                     </>
                                                 ) : (
                                                     <span className="text-lg font-bold text-primary-600">
-                                                        ${product.price}
+                                                        Ksh {product.price}
                                                     </span>
                                                 )}
                                             </div>

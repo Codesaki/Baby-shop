@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
 
-const Create = ({ categories }) => {
+const Create = ({ categories, subCategories }) => {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         sku: '',
@@ -22,13 +22,15 @@ const Create = ({ categories }) => {
 
     useEffect(() => {
         if (data.category_id) {
-            fetch(`/api/categories/${data.category_id}/sub-categories`)
-                .then(res => res.json())
-                .then(data => setSubs(data));
+            // filter local list rather than calling API
+            const filtered = (subCategories || []).filter(
+                s => s.category_id === parseInt(data.category_id, 10)
+            );
+            setSubs(filtered);
         } else {
             setSubs([]);
         }
-    }, [data.category_id]);
+    }, [data.category_id, subCategories]);
 
     const handleFileChange = (e) => {
         setData('images', Array.from(e.target.files));

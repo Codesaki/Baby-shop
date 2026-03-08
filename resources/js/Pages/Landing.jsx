@@ -156,13 +156,13 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
                                         <p className="text-sm text-light-700 line-clamp-2">{p.short_description}</p>
                                         <div className="flex items-center justify-between mt-3">
                                             <span className="font-bold text-primary-600">
-                                                {p.discount_price && p.discount_price < p.price ? (
+                                                {p.discount_price ? (
                                                     <>
-                                                        <span className="text-red-600">${p.discount_price}</span>
-                                                        <span className="text-gray-500 line-through text-sm ml-2">${p.price}</span>
+                                                        <span className="text-red-600">Ksh {(p.price - p.discount_price).toFixed(2)}</span>
+                                                        <span className="text-gray-500 line-through text-sm ml-2">Ksh {p.price}</span>
                                                     </>
                                                 ) : (
-                                                    <span>${p.price || 'Price TBD'}</span>
+                                                    <span>Ksh {p.price || 'Price TBD'}</span>
                                                 )}
                                             </span>
                                             <div className="flex gap-2">
@@ -226,13 +226,13 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories })
                                         <p className="text-sm text-light-700 line-clamp-1">{p.short_description}</p>
                                         <div className="flex items-center justify-between mt-3">
                                             <span className="font-bold text-primary-600">
-                                                {p.discount_price && p.discount_price < p.price ? (
+                                                {p.discount_price ? (
                                                     <>
-                                                        <span className="text-red-600">${p.discount_price}</span>
-                                                        <span className="text-gray-500 line-through text-sm ml-2">${p.price}</span>
+                                                        <span className="text-red-600">Ksh {(p.price - p.discount_price).toFixed(2)}</span>
+                                                        <span className="text-gray-500 line-through text-sm ml-2">Ksh {p.price}</span>
                                                     </>
                                                 ) : (
-                                                    <span>${p.price || 'Price TBD'}</span>
+                                                    <span>Ksh {p.price || 'Price TBD'}</span>
                                                 )}
                                             </span>
                                             <div className="flex gap-2">

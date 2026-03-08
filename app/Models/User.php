@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -23,6 +24,7 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'google_id',
     ];
 
     /**
@@ -68,6 +70,32 @@ class User extends Authenticatable
     public function cart()
     {
         return $this->hasOne(Cart::class);
+    }
+
+    /**
+     * Find or create user from Google OAuth.
+     */
+    public static function findOrCreateFromGoogle($googleUser)
+    {
+        $user = self::where('google_id', $googleUser->id)->first();
+
+        if ($user) {
+            return $user;
+        }
+
+        $user = self::where('email', $googleUser->email)->first();
+
+        if ($user) {
+            $user->update(['google_id' => $googleUser->id]);
+            return $user;
+        }
+
+        return self::create([
+            'name' => $googleUser->name,
+            'email' => $googleUser->email,
+            'google_id' => $googleUser->id,
+            'password' => bcrypt(Str::random(16)), // Random password for OAuth users
+        ]);
     }
 
     /**

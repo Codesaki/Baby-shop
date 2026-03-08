@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import MainLayout from '@/Layouts/MainLayout';
 
 export default function Show({ order }) {
     const { post, processing } = useForm();
@@ -35,7 +35,7 @@ export default function Show({ order }) {
     const canCancel = ['pending', 'processing'].includes(order.status);
 
     return (
-        <AuthenticatedLayout>
+        <MainLayout>
             <Head title={`Order #${order.order_number} - Baby Shop`} />
 
             <div className="min-h-screen bg-light-50">
@@ -66,7 +66,7 @@ export default function Show({ order }) {
                                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                                     <div>
                                         <span className="text-light-600">Order Number:</span>
                                         <div className="font-medium">#{order.order_number}</div>
@@ -88,8 +88,12 @@ export default function Show({ order }) {
                                         <div className="font-medium capitalize">{order.payment_method}</div>
                                     </div>
                                     <div>
+                                        <span className="text-light-600">Payment Status:</span>
+                                        <div className="font-medium capitalize">{order.payment ? order.payment.status : 'N/A'}</div>
+                                    </div>
+                                    <div>
                                         <span className="text-light-600">Total Amount:</span>
-                                        <div className="font-medium">${order.total_amount.toFixed(2)}</div>
+                                        <div className="font-medium">Ksh {order.total_amount.toFixed(2)}</div>
                                     </div>
                                 </div>
                             </div>
@@ -126,8 +130,8 @@ export default function Show({ order }) {
                                                 <p className="text-sm text-light-600">Quantity: {item.quantity}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
-                                                <p className="text-sm text-light-600">${item.price.toFixed(2)} each</p>
+                                                <p className="font-medium">Ksh {(item.price * item.quantity).toFixed(2)}</p>
+                                                <p className="text-sm text-light-600">Ksh {item.price.toFixed(2)} each</p>
                                             </div>
                                         </div>
                                     ))}
@@ -176,7 +180,7 @@ export default function Show({ order }) {
                                 <div className="space-y-2 mb-4">
                                     <div className="flex justify-between">
                                         <span>Subtotal</span>
-                                        <span>${(order.total_amount - 0).toFixed(2)}</span> {/* Assuming no shipping for now */}
+                                        <span>Ksh {(order.total_amount - 0).toFixed(2)}</span> {/* Assuming no shipping for now */}
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Shipping</span>
@@ -184,7 +188,7 @@ export default function Show({ order }) {
                                     </div>
                                     <div className="flex justify-between text-lg font-semibold border-t pt-2">
                                         <span>Total</span>
-                                        <span>${order.total_amount.toFixed(2)}</span>
+                                        <span>Ksh {order.total_amount.toFixed(2)}</span>
                                     </div>
                                 </div>
 
@@ -232,6 +236,6 @@ export default function Show({ order }) {
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </MainLayout>
     );
 }
