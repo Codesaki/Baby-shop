@@ -25,6 +25,7 @@ class User extends Authenticatable
         'role',
         'phone',
         'google_id',
+        'is_admin',
     ];
 
     /**
@@ -70,6 +71,28 @@ class User extends Authenticatable
     public function cart()
     {
         return $this->hasOne(Cart::class);
+    }
+
+    public function adminRoles()
+    {
+        return $this->belongsToMany(Role::class, 'admin_roles');
+    }
+
+    public function hasPermission($permission)
+    {
+        foreach ($this->adminRoles as $role) {
+            foreach ($role->permissions as $perm) {
+                if ($perm->slug === $permission) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 
     /**

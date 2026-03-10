@@ -6,6 +6,19 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\SubCategoryController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderAdminController;
+use App\Http\Controllers\Admin\CustomerAdminController;
+use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\ReviewAdminController;
+use App\Http\Controllers\Admin\CouponAdminController;
+use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -65,28 +78,59 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('/', function () { return Inertia::render('Admin/Dashboard'); })->name('dashboard');
+        // Dashboard
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-        // categories
-        Route::resource('categories', CategoryController::class)->except(['show']);
+        // Catalog Management
+        Route::prefix('catalog')->name('catalog.')->group(function () {
+            Route::resource('categories', CategoryController::class)->except(['show']);
+            Route::resource('sub-categories', SubCategoryController::class)->except(['show']);
+            Route::resource('products', AdminProductController::class);
+            Route::get('products/{id}/stock', [AdminProductController::class, 'addStock'])->name('products.stock');
+        });
 
-        // sub-categories
-        Route::resource('sub-categories', SubCategoryController::class)->except(['show']);
+        // Orders
+        Route::resource('orders', OrderAdminController::class)->only(['index', 'show', 'update']);
+        Route::post('orders/{order}/refund', [OrderAdminController::class, 'refund'])->name('orders.refund');
 
-        // products
-        Route::get('products', [AdminProductController::class, 'index'])->name('products.index');
-        Route::get('products/create', [AdminProductController::class, 'create'])->name('products.create');
-        Route::post('products', [AdminProductController::class, 'store'])->name('products.store');
-        Route::get('products/{id}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
-        Route::put('products/{id}', [AdminProductController::class, 'update'])->name('products.update');
-        Route::patch('products/{id}', [AdminProductController::class, 'update']);
-        Route::delete('products/{id}', [AdminProductController::class, 'destroy'])->name('products.destroy');
-        Route::get('products/{id}/stock', [AdminProductController::class, 'addStock'])->name('products.stock');
+        // Customers
+        Route::resource('customers', CustomerAdminController::class)->only(['index', 'show', 'update']);
 
-        // orders
-        Route::get('orders', [\App\Http\Controllers\OrderController::class, 'adminIndex'])->name('orders.index');
-        Route::get('orders/{order}', [\App\Http\Controllers\OrderController::class, 'adminShow'])->name('orders.show');
-        Route::patch('orders/{order}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('orders.update-status');
+        // Marketing
+        Route::prefix('marketing')->name('marketing.')->group(function () {
+            Route::resource('coupons', CouponAdminController::class);
+        });
+
+        // Content Management
+        Route::prefix('content')->name('content.')->group(function () {
+            Route::resource('pages', PageController::class);
+            Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'destroy']);
+            Route::post('contact-messages/{contactMessage}/reply', [ContactMessageController::class, 'reply'])->name('contact-messages.reply');
+            Route::patch('contact-messages/{contactMessage}/status', [ContactMessageController::class, 'updateStatus'])->name('contact-messages.status');
+            Route::resource('reviews', ReviewAdminController::class)->only(['index', 'destroy']);
+            Route::patch('reviews/{review}/approve', [ReviewAdminController::class, 'approve'])->name('reviews.approve');
+            Route::patch('reviews/{review}/reject', [ReviewAdminController::class, 'reject'])->name('reviews.reject');
+        });
+
+        // Media Library
+        Route::resource('media', MediaController::class)->only(['index', 'store', 'destroy']);
+
+        // Analytics & Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('sales', [ReportController::class, 'salesReport'])->name('sales');
+            Route::get('products', [ReportController::class, 'productReport'])->name('products');
+            Route::get('customers', [ReportController::class, 'customerReport'])->name('customers');
+        });
+
+        // Activity Logs
+        Route::resource('activity-logs', ActivityLogController::class)->only(['index']);
+
+        // System Configuration
+        Route::prefix('system')->name('system.')->group(function () {
+            Route::resource('settings', SettingsController::class)->only(['index', 'update']);
+            Route::resource('admin-users', AdminUserController::class);
+            Route::resource('roles', RoleController::class);
+        });
     });
 
 Route::get('auth/google', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');

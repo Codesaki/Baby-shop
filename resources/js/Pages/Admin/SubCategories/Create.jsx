@@ -10,7 +10,7 @@ const Create = ({ categories }) => {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.sub-categories.store'));
+        post(route('admin.catalog.sub-categories.store'));
     };
 
     return (

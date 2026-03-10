@@ -9,7 +9,7 @@ const Create = () => {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.categories.store'));
+        post(route('admin.catalog.categories.store'));
     };
 
     return (

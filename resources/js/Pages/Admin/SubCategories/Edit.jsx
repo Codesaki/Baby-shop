@@ -10,7 +10,7 @@ const Edit = ({ subCategory, categories }) => {
 
     const submit = (e) => {
         e.preventDefault();
-        patch(route('admin.sub-categories.update', subCategory.id));
+        patch(route('admin.catalog.sub-categories.update', subCategory.id));
     };
 
     return (

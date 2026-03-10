@@ -40,6 +40,14 @@ class HandleInertiaRequests extends Middleware
                 'warning' => $request->session()->pull('warning'),
                 'info' => $request->session()->pull('info'),
             ],
+            'ziggy' => function () use ($request) {
+                return array_merge((new \Tighten\Ziggy\Ziggy)->toArray(), [
+                    'location' => $request->url(),
+                ]);
+            },
+            'routes' => function () {
+                return (new \Tighten\Ziggy\Ziggy)->toArray();
+            },
         ];
     }
 }

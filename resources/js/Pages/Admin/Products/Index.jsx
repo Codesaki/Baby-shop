@@ -5,7 +5,7 @@ import { Head, Link, router } from '@inertiajs/react';
 const Index = ({ products }) => {
     const deleteProduct = (id) => {
         if (confirm('Are you sure you want to delete this product?')) {
-            router.delete(route('admin.products.destroy', id));
+            router.delete(route('admin.catalog.products.destroy', id));
         }
     };
 
@@ -15,7 +15,7 @@ const Index = ({ products }) => {
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Products</h1>
                 <Link
-                    href={route('admin.products.create')}
+                    href={route('admin.catalog.products.create')}
                     className="px-4 py-2 bg-blue-600 text-white rounded"
                 >
                     New Product
@@ -43,7 +43,7 @@ const Index = ({ products }) => {
                             <td className="p-2">{new Date(p.created_at).toLocaleDateString()}</td>
                             <td className="p-2">
                                 <Link
-                                    href={route('admin.products.edit', p.id)}
+                                    href={route('admin.catalog.products.edit', p.id)}
                                     className="text-blue-600 mr-2"
                                 >
                                     Edit

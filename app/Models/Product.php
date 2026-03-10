@@ -18,12 +18,18 @@ class Product extends Model
         'short_description',
         'long_description',
         'quantity',
+        'stock_quantity',
+        'low_stock_threshold',
+        'track_inventory',
+        'allow_backorders',
         'price',
         'discount_price',
         'is_featured',
         'is_new_arrival',
         'is_popular',
         'is_active',
+        'status',
+        'visibility',
         'weight',
         'brand',
         'age_group',
@@ -70,6 +76,11 @@ class Product extends Model
     public function stockMovements()
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'product_tags');
     }
 
     public function getAverageRatingAttribute()

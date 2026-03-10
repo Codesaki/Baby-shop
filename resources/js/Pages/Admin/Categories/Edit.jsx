@@ -9,7 +9,7 @@ const Edit = ({ category }) => {
 
     const submit = (e) => {
         e.preventDefault();
-        put(route('admin.categories.update', category.id));
+        put(route('admin.catalog.categories.update', category.id));
     };
 
     return (

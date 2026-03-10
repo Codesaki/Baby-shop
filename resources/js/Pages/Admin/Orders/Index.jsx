@@ -2,21 +2,27 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function Index({ orders, stats, filters }) {
+export default function Index({ orders, stats, filters = {} }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
 
+    // guard against missing ziggy/route
+    const ordersIndexRoute = typeof route !== 'undefined' ? route('admin.orders.index') : '';
+    
     const { get } = useForm();
 
     const handleFilter = () => {
-        get(route('admin.orders.index'), {
-            search: searchTerm,
-            status: statusFilter,
-            date_from: dateFrom,
-            date_to: dateTo,
-        });
+        const params = {};
+        if (searchTerm) params.search = searchTerm;
+        if (statusFilter) params.status = statusFilter;
+        if (dateFrom) params.date_from = dateFrom;
+        if (dateTo) params.date_to = dateTo;
+        
+        if (ordersIndexRoute) {
+            get(ordersIndexRoute, params);
+        }
     };
 
     const clearFilters = () => {
@@ -24,7 +30,9 @@ export default function Index({ orders, stats, filters }) {
         setStatusFilter('');
         setDateFrom('');
         setDateTo('');
-        get(route('admin.orders.index'));
+        if (ordersIndexRoute) {
+            get(ordersIndexRoute);
+        }
     };
 
     const getStatusColor = (status) => {
@@ -251,16 +259,24 @@ export default function Index({ orders, stats, filters }) {
                                 </div>
                                 <div className="flex space-x-1">
                                     {orders.links.map((link, index) => (
-                                        <Link
-                                            key={index}
-                                            href={link.url}
-                                            className={`px-3 py-2 text-sm rounded-md ${
-                                                link.active
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-white text-gray-700 hover:bg-gray-50 border'
-                                            } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                        />
+                                        link.url ? (
+                                            <Link
+                                                key={index}
+                                                href={link.url}
+                                                className={`px-3 py-2 text-sm rounded-md ${
+                                                    link.active
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                                                }`}
+                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                            />
+                                        ) : (
+                                            <span
+                                                key={index}
+                                                className="px-3 py-2 text-sm rounded-md bg-white text-gray-400 cursor-not-allowed"
+                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                            />
+                                        )
                                     ))}
                                 </div>
                             </div>

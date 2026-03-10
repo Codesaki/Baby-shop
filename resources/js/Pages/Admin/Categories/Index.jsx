@@ -5,7 +5,7 @@ import { Head, Link, router } from '@inertiajs/react';
 const Index = ({ categories }) => {
     const deleteCategory = (id) => {
         if (confirm('Delete this category? Any subcategories will also be deleted.')) {
-            router.delete(route('admin.categories.destroy', id));
+            router.delete(route('admin.catalog.categories.destroy', id));
         }
     };
 
@@ -15,7 +15,7 @@ const Index = ({ categories }) => {
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Categories</h1>
                 <Link
-                    href={route('admin.categories.create')}
+                    href={route('admin.catalog.categories.create')}
                     className="px-4 py-2 bg-blue-600 text-white rounded"
                 >
                     New Category
@@ -37,7 +37,7 @@ const Index = ({ categories }) => {
                             <td className="p-2">{cat.slug}</td>
                             <td className="p-2 space-x-2">
                                 <Link
-                                    href={route('admin.categories.edit', cat.id)}
+                                    href={route('admin.catalog.categories.edit', cat.id)}
                                     className="text-blue-600 mr-2"
                                 >
                                     Edit
