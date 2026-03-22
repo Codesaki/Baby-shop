@@ -12,7 +12,7 @@ class OrderAdminController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with('user');
+        $query = Order::with('user', 'items');
 
         // Search
         if ($request->filled('search')) {
@@ -43,16 +43,27 @@ class OrderAdminController extends Controller
             ->paginate(20)
             ->appends($request->query());
 
-        $orders->transform(function ($order) {
+        $orders->getCollection()->transform(function ($order) {
             return [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
                 'customer_name' => $order->user->name,
                 'customer_email' => $order->user->email,
-                'total_amount' => $order->total_amount,
+                'total_amount' => (float) $order->total_amount,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
                 'created_at' => $order->created_at->format('M d, Y H:i'),
+                'items' => $order->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                    ];
+                })->toArray(),
+                'user' => [
+                    'id' => $order->user->id,
+                    'name' => $order->user->name,
+                ],
             ];
         });
 
@@ -61,7 +72,8 @@ class OrderAdminController extends Controller
         $stats = [
             'total_orders' => $allOrders->count(),
             'pending_orders' => $allOrders->where('status', 'pending')->count(),
-            'total_revenue' => $allOrders->sum('total_amount'),
+            'shipped_orders' => $allOrders->where('status', 'shipped')->count(),
+            'total_revenue' => (float) $allOrders->sum('total_amount'),
         ];
 
         return Inertia::render('Admin/Orders/Index', [
@@ -77,16 +89,21 @@ class OrderAdminController extends Controller
 
     public function show(Order $order)
     {
-        $order->load('user', 'items.product');
+        // Mark as viewed
+        if (is_null($order->viewed_at)) {
+            $order->update(['viewed_at' => now()]);
+        }
+
+        $order->load('user', 'items.product', 'items.variant');
 
         $items = $order->items->map(function ($item) {
             return [
                 'id' => $item->id,
-                'product_name' => $item->product->name,
-                'sku' => $item->product->sku,
+                'product' => $item->product,
+                'variant' => $item->variant,
                 'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'subtotal' => $item->quantity * $item->unit_price,
+                'price' => (float) $item->price,
+                'subtotal' => (float) ($item->quantity * $item->price),
             ];
         });
 
@@ -96,8 +113,8 @@ class OrderAdminController extends Controller
                 'order_number' => $order->order_number,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
-                'total_amount' => $order->total_amount,
-                'refund_amount' => $order->refund_amount,
+                'total_amount' => (float) $order->total_amount,
+                'refund_amount' => $order->refund_amount ? (float) $order->refund_amount : null,
                 'payment_method' => $order->payment_method,
                 'tracking_number' => $order->tracking_number,
                 'estimated_delivery' => $order->estimated_delivery,

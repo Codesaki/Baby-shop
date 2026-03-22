@@ -30,13 +30,20 @@ class ReportController extends Controller
             ->selectRaw('DATE(created_at) as date, COUNT(*) as order_count, SUM(total_amount) as total')
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'date' => $item->date,
+                    'order_count' => $item->order_count,
+                    'total' => (float) $item->total,
+                ];
+            });
 
         return Inertia::render('Admin/Reports/Sales', [
             'report' => [
-                'total_sales' => $totalSales,
+                'total_sales' => (float) $totalSales,
                 'total_orders' => $totalOrders,
-                'average_order_value' => round($averageOrderValue, 2),
+                'average_order_value' => (float) round($averageOrderValue, 2),
             ],
             'daily_sales' => $dailySales,
             'start_date' => $startDate->format('Y-m-d'),
@@ -87,7 +94,16 @@ class ReportController extends Controller
             ->groupBy('users.id')
             ->orderBy('total_spent', 'desc')
             ->limit(20)
-            ->get();
+            ->get()
+            ->map(function ($customer) {
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'order_count' => $customer->order_count,
+                    'total_spent' => (float) $customer->total_spent,
+                ];
+            });
 
         $repeatBuyers = User::where('is_admin', false)
             ->selectRaw('users.*, COUNT(orders.id) as order_count')
@@ -97,7 +113,15 @@ class ReportController extends Controller
             ->groupBy('users.id')
             ->orderBy('order_count', 'desc')
             ->limit(20)
-            ->get();
+            ->get()
+            ->map(function ($customer) {
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'order_count' => $customer->order_count,
+                ];
+            });
 
         return Inertia::render('Admin/Reports/Customers', [
             'top_customers' => $topCustomers,

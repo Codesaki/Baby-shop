@@ -78,7 +78,14 @@ const CustomerShow = ({ customer, orders, addresses, total_spent, total_orders }
                             <tbody className="divide-y">
                                 {orders.map((order) => (
                                     <tr key={order.id}>
-                                        <td className="px-4 py-2 text-blue-600 font-medium">{order.order_number}</td>
+                                        <td className="px-4 py-2 font-medium">
+                                            <Link 
+                                                href={route('admin.orders.show', order.id)}
+                                                className="text-blue-600 hover:text-blue-700 hover:underline"
+                                            >
+                                                {order.order_number}
+                                            </Link>
+                                        </td>
                                         <td className="px-4 py-2">${order.total_amount.toFixed(2)}</td>
                                         <td className="px-4 py-2">
                                             <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">

@@ -18,6 +18,12 @@ class CartController extends Controller
         $cart = $this->getOrCreateCart();
         $cart->load(['items.product.images', 'items.variant']);
 
+        // Cast prices to float for proper JSON serialization
+        $cart->items->each(function ($item) {
+            $item->price = (float) $item->price;
+            $item->total = (float) $item->total;
+        });
+
         return Inertia::render('Cart/Index', [
             'cart' => $cart,
             'items' => $cart->items,
@@ -40,12 +46,12 @@ class CartController extends Controller
             if ($variant->stock_quantity < $request->quantity) {
                 return back()->withErrors(['quantity' => 'Insufficient stock for this variant.']);
             }
-            $price = $product->price + $variant->price_adjustment;
+            $price = ($product->discount_price ?? $product->price) + $variant->price_adjustment;
         } else {
             if ($product->quantity < $request->quantity) {
                 return back()->withErrors(['quantity' => 'Insufficient stock.']);
             }
-            $price = $product->price;
+            $price = $product->discount_price ?? $product->price;
         }
 
         $cart = $this->getOrCreateCart();
@@ -69,7 +75,9 @@ class CartController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Product added to cart.');
+        return back()->with('cart_success', [
+            'product_name' => $product->name,
+        ]);
     }
 
     public function update(Request $request, CartItem $item)
@@ -82,18 +90,18 @@ class CartController extends Controller
         if ($item->variant_id) {
             $variant = $item->variant;
             if ($variant->stock_quantity < $request->quantity) {
-                return response()->json(['error' => 'Insufficient stock.'], 422);
+                return back()->withErrors(['quantity' => 'Insufficient stock for this variant.']);
             }
         } else {
             $product = $item->product;
             if ($product->quantity < $request->quantity) {
-                return response()->json(['error' => 'Insufficient stock.'], 422);
+                return back()->withErrors(['quantity' => 'Insufficient stock.']);
             }
         }
 
         $item->update(['quantity' => $request->quantity]);
 
-        return response()->json(['success' => true]);
+        return back();
     }
 
     public function destroy(CartItem $item)

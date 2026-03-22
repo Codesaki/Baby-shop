@@ -1,10 +1,11 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
 export default function MainLayout({ children }) {
-    const { auth, cart } = usePage().props;
+    const { auth, cart, flash } = usePage().props;
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 0);
@@ -13,14 +14,29 @@ export default function MainLayout({ children }) {
     }, []);
 
     const navLinks = [
-        { name: 'Baby Care', href: '#' },
-        { name: 'Clothing', href: '#' },
-        { name: 'Feeding', href: '#' },
-        { name: 'Mommy', href: '#' },
-        { name: 'Playtime', href: '#' },
-        { name: 'Travel', href: '#' },
-        { name: 'Warmth', href: '#' },
+        { name: 'Baby Care', slug: 'baby-care' },
+        { name: 'Clothing', slug: 'clothing' },
+        { name: 'Feeding', slug: 'feeding' },
+        { name: 'Mommy', slug: 'mommy' },
+        { name: 'Playtime', slug: 'playtime' },
+        { name: 'Travel', slug: 'travel' },
+        { name: 'Warmth', slug: 'warmth' },
     ];
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        const query = searchTerm.trim();
+        if (!query) return;
+
+        router.get(
+            route('products.search'),
+            { q: query },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
 
     const accountHref = auth.user ? route('dashboard') : route('login');
 
@@ -46,17 +62,47 @@ export default function MainLayout({ children }) {
                 </div>
 
                 {/* Main Header */}
-                <nav className={`transition-all duration-300 ${isScrolled ? 'bg-accent-500 shadow-soft-lg' : 'bg-transparent'}`}>
+                <nav
+                    className={`transition-all duration-300 ${
+                        isScrolled ? 'bg-primary-700/95 shadow-soft-lg backdrop-blur-xs' : 'bg-white/80 backdrop-blur-xs border-b border-light-100'
+                    }`}
+                >
                     <div className="max-w-7xl mx-auto px-4 py-4">
-                        {/* Top Row - Logo & Actions */}
-                        <div className="flex items-center justify-between">
+                        {/* Top Row - Logo, Search (desktop), Actions */}
+                        <div className="flex items-center justify-between gap-4">
                             {/* Logo */}
-                            <Link href="/" className="flex-shrink-0">
-                                <div className="font-architects text-3xl text-blue-600 leading-none">
+                            <Link href={route('landing')} className="flex-shrink-0">
+                                <div className="font-architects text-3xl text-primary-500 leading-none">
                                     Blimey
-                                    <div className="text-xs font-sans text-blue-600 -mt-1">Baby Shop</div>
+                                    <div className="text-xs font-sans text-primary-500 -mt-1">Baby Shop</div>
                                 </div>
                             </Link>
+
+                            {/* Search - desktop only, centered between logo and actions */}
+                            <div className="hidden md:flex flex-1 justify-center">
+                                <div className="w-full max-w-full sm:max-w-xl lg:max-w-3xl">
+                                    <form
+                                        onSubmit={handleSearchSubmit}
+                                        className="flex items-center bg-white/95 border border-light-200 rounded-full shadow-soft overflow-hidden focus-within:ring-2 focus-within:ring-primary-400"
+                                    >
+                                        <input
+                                            aria-label="Search"
+                                            type="search"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            placeholder="Search by product name, category, or use words like 'warm blanket'..."
+                                            className="flex-1 px-4 py-3 text-sm outline-none bg-transparent"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="px-5 py-3 bg-primary-500 text-white rounded-r-full hover:bg-primary-600 transition-colors text-sm font-medium flex items-center gap-2"
+                                        >
+                                            <i className="fa-solid fa-search"></i>
+                                            <span className="hidden sm:inline">Search</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
 
                             {/* Actions (Account/Cart/Hamburger) */}
                             <div className="flex items-center gap-4">
@@ -74,18 +120,32 @@ export default function MainLayout({ children }) {
                                     )}
                                 </Link>
 
+                                {/* Mobile menu toggle */}
                                 <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden text-light-900 hover:text-primary-600 transition-colors" aria-label="Toggle menu">
                                     <i className="fa-solid fa-bars"></i>
                                 </button>
                             </div>
                         </div>
 
-                        {/* Search (mobile-first): full width on small, centered and constrained on lg */}
-                        <div className="mt-3 flex justify-center">
-                            <div className="w-full px-4 sm:px-0 max-w-full sm:max-w-xl lg:max-w-2xl">
-                                <form className="flex items-center bg-white border border-light-200 rounded-full shadow-sm overflow-hidden">
-                                    <input aria-label="Search" type="text" placeholder="Search products..." className="flex-1 px-4 py-3 text-sm outline-none" />
-                                    <button type="submit" className="px-4 py-3 bg-primary-500 text-white rounded-r-full hover:bg-primary-600 transition-colors">
+                        {/* Search - mobile only, full width below top row */}
+                        <div className="mt-3 flex justify-center md:hidden">
+                            <div className="w-full px-4">
+                                <form
+                                    onSubmit={handleSearchSubmit}
+                                    className="flex items-center bg-white/95 border border-light-200 rounded-full shadow-soft overflow-hidden focus-within:ring-2 focus-within:ring-primary-400"
+                                >
+                                    <input
+                                        aria-label="Search"
+                                        type="search"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="Search products..."
+                                        className="flex-1 px-4 py-3 text-sm outline-none bg-transparent"
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="px-5 py-3 bg-primary-500 text-white rounded-r-full hover:bg-primary-600 transition-colors text-sm font-medium flex items-center gap-2"
+                                    >
                                         <i className="fa-solid fa-search"></i>
                                     </button>
                                 </form>
@@ -93,14 +153,22 @@ export default function MainLayout({ children }) {
                         </div>
 
                         {/* Spacer between search and nav links */}
-                        <div className="mt-6" />
+                        <div className="mt-4 md:mt-6" />
 
                         {/* Navigation Links - Desktop */}
                         <div className="hidden md:flex justify-center gap-8 mt-4">
                             {navLinks.map((link) => (
-                                <a key={link.name} href={link.href} className="text-light-900 hover:text-primary-600 transition-colors font-medium text-sm">
+                                <Link
+                                    key={link.name}
+                                    href={route('collections.show', link.slug)}
+                                    className={`font-medium text-sm pb-1 border-b-2 transition-colors ${
+                                        isScrolled
+                                            ? 'text-light-50 hover:text-secondary-100 border-transparent hover:border-secondary-200'
+                                            : 'text-primary-700 hover:text-primary-800 border-transparent hover:border-primary-300'
+                                    }`}
+                                >
                                     {link.name}
-                                </a>
+                                </Link>
                             ))}
                         </div>
 
@@ -108,15 +176,36 @@ export default function MainLayout({ children }) {
                         {isMobileMenuOpen && (
                             <div className="md:hidden mt-4 pb-4 border-t border-light-200">
                                 {navLinks.map((link) => (
-                                    <a key={link.name} href={link.href} className="block py-3 text-light-900 hover:text-primary-600 transition-colors font-medium">
+                                    <Link
+                                        key={link.name}
+                                        href={route('collections.show', link.slug)}
+                                        className="block py-3 text-light-900 hover:text-primary-600 transition-colors font-medium"
+                                    >
                                         {link.name}
-                                    </a>
+                                    </Link>
                                 ))}
                             </div>
                         )}
                     </div>
                 </nav>
             </header>
+
+            {flash?.cart_success?.product_name && (
+                <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-3 z-40 shadow-sm">
+                    <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <p className="text-emerald-900 text-sm md:text-base">
+                            <span className="font-semibold">{flash.cart_success.product_name}</span> added to cart.
+                        </p>
+                        <Link
+                            href={route('cart.index')}
+                            className="inline-flex items-center justify-center shrink-0 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors shadow-soft"
+                        >
+                            Go to cart
+                            <i className="fa-solid fa-arrow-right ml-2 text-xs" aria-hidden />
+                        </Link>
+                    </div>
+                </div>
+            )}
 
             <main>{children}</main>
         </div>

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use App\Models\Product;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 
 class WishlistController extends Controller
@@ -35,7 +37,7 @@ class WishlistController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json(['message' => 'Product already in wishlist'], 409);
+            return back()->with('info', 'This product is already in your wishlist.');
         }
 
         Wishlist::create([
@@ -43,7 +45,7 @@ class WishlistController extends Controller
             'product_id' => $request->product_id,
         ]);
 
-        return response()->json(['message' => 'Added to wishlist']);
+        return back()->with('success', 'Added to your wishlist.');
     }
 
     public function destroy($productId)
@@ -52,7 +54,7 @@ class WishlistController extends Controller
             ->where('product_id', $productId)
             ->delete();
 
-        return response()->json(['message' => 'Removed from wishlist']);
+        return back()->with('success', 'Removed from your wishlist.');
     }
 
     public function addToCart(Request $request)
@@ -61,14 +63,41 @@ class WishlistController extends Controller
             'product_id' => 'required|exists:products,id',
         ]);
 
-        // Remove from wishlist
         Wishlist::where('user_id', Auth::id())
             ->where('product_id', $request->product_id)
             ->delete();
 
-        // Add to cart logic here - but since cart is handled separately, maybe just return success
-        // Actually, we can use the cart store route
+        $product = Product::findOrFail($request->product_id);
+        if ($product->quantity < 1) {
+            return back()->with('error', 'This product is out of stock.');
+        }
 
-        return response()->json(['message' => 'Added to cart']);
+        $price = $product->discount_price !== null && $product->discount_price !== ''
+            ? (float) $product->price - (float) $product->discount_price
+            : (float) $product->price;
+
+        $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
+
+        $existingItem = $cart->items()
+            ->where('product_id', $product->id)
+            ->whereNull('variant_id')
+            ->first();
+
+        if ($existingItem) {
+            $existingItem->update([
+                'quantity' => $existingItem->quantity + 1,
+            ]);
+        } else {
+            $cart->items()->create([
+                'product_id' => $product->id,
+                'variant_id' => null,
+                'quantity' => 1,
+                'price' => $price,
+            ]);
+        }
+
+        return back()->with('cart_success', [
+            'product_name' => $product->name,
+        ]);
     }
 }

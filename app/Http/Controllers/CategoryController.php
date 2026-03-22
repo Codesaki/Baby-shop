@@ -15,6 +15,13 @@ class CategoryController extends Controller
             ->with('images')
             ->paginate(12);
 
+        // Transform products to ensure decimal fields are floats
+        $products->getCollection()->transform(function ($product) {
+            $product->price = (float) $product->price;
+            $product->discount_price = $product->discount_price ? (float) $product->discount_price : null;
+            return $product;
+        });
+
         return Inertia::render('Category/Show', [
             'category' => $category,
             'products' => $products,

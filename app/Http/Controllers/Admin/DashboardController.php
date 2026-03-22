@@ -73,7 +73,7 @@ class DashboardController extends Controller
                     'id' => $order->id,
                     'order_number' => $order->order_number,
                     'customer_name' => $order->user->name,
-                    'total_amount' => $order->total_amount,
+                    'total_amount' => (float) $order->total_amount,
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
                     'created_at' => $order->created_at->format('M d, Y'),

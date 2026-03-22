@@ -1,17 +1,17 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function Show({ order }) {
+export default function Show({ order, customer, shipping_address, billing_address, items }) {
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState(order.status);
     const [statusNotes, setStatusNotes] = useState('');
-
-    const { patch, processing } = useForm();
+    const [statusUpdating, setStatusUpdating] = useState(false);
 
     const getStatusColor = (status) => {
         const colors = {
             pending: 'bg-yellow-100 text-yellow-800',
+            paid: 'bg-emerald-100 text-emerald-800',
             processing: 'bg-blue-100 text-blue-800',
             shipped: 'bg-purple-100 text-purple-800',
             delivered: 'bg-green-100 text-green-800',
@@ -28,19 +28,27 @@ export default function Show({ order }) {
     };
 
     const handleStatusUpdate = () => {
-        patch(route('admin.orders.update-status', order.id), {
-            status: selectedStatus,
-            notes: statusNotes,
-        }, {
-            onSuccess: () => {
-                setShowStatusModal(false);
-                setStatusNotes('');
-            }
-        });
+        setStatusUpdating(true);
+        router.patch(
+            route('admin.orders.update', order.id),
+            {
+                status: selectedStatus,
+                notes: statusNotes,
+            },
+            {
+                preserveScroll: true,
+                onFinish: () => setStatusUpdating(false),
+                onSuccess: () => {
+                    setShowStatusModal(false);
+                    setStatusNotes('');
+                },
+            },
+        );
     };
 
     const statusOptions = [
         { value: 'pending', label: 'Pending' },
+        { value: 'paid', label: 'Paid' },
         { value: 'processing', label: 'Processing' },
         { value: 'shipped', label: 'Shipped' },
         { value: 'delivered', label: 'Delivered' },
@@ -93,26 +101,30 @@ export default function Show({ order }) {
                         {/* Customer Information */}
                         <div className="bg-white p-6 rounded-lg shadow-sm border">
                             <h3 className="text-lg font-medium mb-4">Customer Information</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Name</p>
-                                    <p className="text-sm text-gray-900">{order.user.name}</p>
+                            {customer ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Name</p>
+                                        <p className="text-sm text-gray-900">{customer.name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Email</p>
+                                        <p className="text-sm text-gray-900">{customer.email}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Email</p>
-                                    <p className="text-sm text-gray-900">{order.user.email}</p>
-                                </div>
-                            </div>
+                            ) : (
+                                <p className="text-sm text-gray-600">Customer information not available.</p>
+                            )}
                         </div>
 
                         {/* Order Items */}
                         <div className="bg-white p-6 rounded-lg shadow-sm border">
                             <h3 className="text-lg font-medium mb-4">Order Items</h3>
                             <div className="space-y-4">
-                                {order.items.map((item) => (
+                                {items.map((item) => (
                                     <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                                         <div className="w-16 h-16 flex-shrink-0">
-                                            {item.product.images && item.product.images.length > 0 ? (
+                                            {item.product && item.product.images && item.product.images.length > 0 ? (
                                                 <img
                                                     src={`/storage/${item.product.images[0].image_path}`}
                                                     alt={item.product.name}
@@ -125,7 +137,7 @@ export default function Show({ order }) {
                                             )}
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-medium text-gray-900">{item.product.name}</h4>
+                                            <h4 className="font-medium text-gray-900">{item.product ? item.product.name : 'Product not found'}</h4>
                                             {item.variant && (
                                                 <p className="text-sm text-gray-600">{item.variant.display_name}</p>
                                             )}
@@ -145,20 +157,20 @@ export default function Show({ order }) {
                             <div className="bg-white p-6 rounded-lg shadow-sm border">
                                 <h3 className="text-lg font-medium mb-4">Shipping Address</h3>
                                 <div className="text-sm text-gray-600">
-                                    <p className="font-medium text-gray-900">{order.shipping_address.name}</p>
-                                    <p>{order.shipping_address.address_line}</p>
-                                    <p>{order.shipping_address.city}, {order.shipping_address.postal_code}</p>
-                                    <p>{order.shipping_address.phone}</p>
+                                    <p className="font-medium text-gray-900">{shipping_address.name}</p>
+                                    <p>{shipping_address.address_line}</p>
+                                    <p>{shipping_address.city}, {shipping_address.postal_code}</p>
+                                    <p>{shipping_address.phone}</p>
                                 </div>
                             </div>
 
                             <div className="bg-white p-6 rounded-lg shadow-sm border">
                                 <h3 className="text-lg font-medium mb-4">Billing Address</h3>
                                 <div className="text-sm text-gray-600">
-                                    <p className="font-medium text-gray-900">{order.billing_address.name}</p>
-                                    <p>{order.billing_address.address_line}</p>
-                                    <p>{order.billing_address.city}, {order.billing_address.postal_code}</p>
-                                    <p>{order.billing_address.phone}</p>
+                                    <p className="font-medium text-gray-900">{billing_address.name}</p>
+                                    <p>{billing_address.address_line}</p>
+                                    <p>{billing_address.city}, {billing_address.postal_code}</p>
+                                    <p>{billing_address.phone}</p>
                                 </div>
                             </div>
                         </div>
@@ -269,10 +281,10 @@ export default function Show({ order }) {
                             </button>
                             <button
                                 onClick={handleStatusUpdate}
-                                disabled={processing}
+                                disabled={statusUpdating}
                                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
                             >
-                                {processing ? 'Updating...' : 'Update Status'}
+                                {statusUpdating ? 'Updating...' : 'Update Status'}
                             </button>
                         </div>
                     </div>

@@ -19,6 +19,16 @@ class OrderController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
+        // Cast decimal fields to float
+        $orders->getCollection()->transform(function ($order) {
+            $order->total_amount = (float) $order->total_amount;
+            $order->items->each(function ($item) {
+                $item->price = (float) $item->price;
+                $item->total = (float) $item->total;
+            });
+            return $order;
+        });
+
         return Inertia::render('Orders/Index', [
             'orders' => $orders,
         ]);
@@ -38,6 +48,13 @@ class OrderController extends Controller
             'billingAddress',
             'payment'
         ]);
+
+        // Cast decimal fields to float
+        $order->total_amount = (float) $order->total_amount;
+        $order->items->each(function ($item) {
+            $item->price = (float) $item->price;
+            $item->total = (float) $item->total;
+        });
 
         return Inertia::render('Orders/Show', [
             'order' => $order,

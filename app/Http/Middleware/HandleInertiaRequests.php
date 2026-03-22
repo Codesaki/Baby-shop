@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,6 +40,12 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->pull('error'),
                 'warning' => $request->session()->pull('warning'),
                 'info' => $request->session()->pull('info'),
+                'cart_success' => $request->session()->pull('cart_success'),
+            ],
+            'admin' => [
+                'pending_orders_count' => $request->user() && ($request->user()->role === 'admin')
+                    ? Order::query()->where('status', 'pending')->whereNull('viewed_at')->count()
+                    : 0,
             ],
             'ziggy' => function () use ($request) {
                 return array_merge((new \Tighten\Ziggy\Ziggy)->toArray(), [

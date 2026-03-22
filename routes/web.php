@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\SubCategoryController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\LandingCtaController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,9 +30,13 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // product detail page
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+// product search
+Route::get('/search', [ProductController::class, 'search'])->name('products.search');
 
 // category pages
 Route::get('/categories/{category}', [\App\Http\Controllers\CategoryController::class, 'show'])->name('categories.show');
+// collections (navbar links)
+Route::get('/collections/{slug}', [CollectionController::class, 'show'])->name('collections.show');
 
 // cart routes
 Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
@@ -43,6 +49,10 @@ Route::delete('/cart', [\App\Http\Controllers\CartController::class, 'clear'])->
 Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/success', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+
+// payment callbacks
+Route::post('/mpesa/callback', [\App\Http\Controllers\PaymentController::class, 'mpesaCallback'])->name('mpesa.callback');
+Route::get('/pesapal/callback', [\App\Http\Controllers\PaymentController::class, 'pesapalCallback'])->name('pesapal.callback');
 
 // order routes
 Route::middleware('auth')->group(function () {
@@ -61,7 +71,10 @@ Route::middleware('auth')->group(function () {
 });
 
 // API helpers
-Route::get('/api/categories/{category}/sub-categories', [\App\Http\Controllers\Admin\CategoryController::class, 'subCategories']);
+Route::get('/api/categories/{id}/sub-categories', function ($id) {
+    $category = \App\Models\Category::findOrFail($id);
+    return response()->json($category->subCategories()->get());
+});
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
@@ -87,6 +100,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])
             Route::resource('sub-categories', SubCategoryController::class)->except(['show']);
             Route::resource('products', AdminProductController::class);
             Route::get('products/{id}/stock', [AdminProductController::class, 'addStock'])->name('products.stock');
+            Route::delete('products/{product}/images/{image}', [AdminProductController::class, 'destroyImage'])->name('products.images.destroy');
         });
 
         // Orders
@@ -103,6 +117,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])
 
         // Content Management
         Route::prefix('content')->name('content.')->group(function () {
+            Route::resource('landing-ctas', LandingCtaController::class)->except(['show']);
             Route::resource('pages', PageController::class);
             Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'destroy']);
             Route::post('contact-messages/{contactMessage}/reply', [ContactMessageController::class, 'reply'])->name('contact-messages.reply');

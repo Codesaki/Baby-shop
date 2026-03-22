@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 const AdminLayout = ({ children }) => {
-    const { auth } = usePage().props;
+    const { auth, admin } = usePage().props;
     const [expandedMenu, setExpandedMenu] = useState('catalog');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const toggleMenu = (menu) => {
         setExpandedMenu(expandedMenu === menu ? null : menu);
@@ -47,8 +48,22 @@ const AdminLayout = ({ children }) => {
 
     return (
         <div className="min-h-screen flex">
+            {/* Mobile overlay */}
+            {sidebarOpen && (
+                <button
+                    type="button"
+                    className="fixed inset-0 bg-black/40 z-40 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                    aria-label="Close menu"
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 bg-gray-800 text-white flex flex-col shadow-lg overflow-y-auto">
+            <aside
+                className={`bg-gray-800 text-white flex flex-col shadow-lg overflow-y-auto z-50
+                fixed inset-y-0 left-0 w-72 transform transition-transform duration-200 md:static md:translate-x-0 md:w-64
+                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:block`}
+            >
                 <div className="p-6 border-b border-gray-700">
                     <h1 className="text-2xl font-bold">Baby Shop</h1>
                     <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
@@ -77,9 +92,19 @@ const AdminLayout = ({ children }) => {
                     {/* Orders */}
                     <Link
                         href={route('admin.orders.index')}
-                        className="block px-4 py-2 rounded hover:bg-gray-700 transition font-semibold text-sm"
+                        className="flex items-center justify-between gap-2 px-4 py-2 rounded hover:bg-gray-700 transition font-semibold text-sm"
                     >
-                        🛒 Orders
+                        <span className="flex items-center gap-1.5 flex-wrap">
+                            🛒 Orders
+                            {admin?.pending_orders_count > 0 && (
+                                <span
+                                    className="inline-flex items-center rounded-md bg-amber-400/90 text-gray-900 text-xs font-bold px-1.5 py-0.5 shadow-sm ring-1 ring-amber-300/80 tabular-nums"
+                                    title="Pending or processing orders"
+                                >
+                                    ({admin.pending_orders_count})
+                                </span>
+                            )}
+                        </span>
                     </Link>
 
                     {/* Customers */}
@@ -104,6 +129,7 @@ const AdminLayout = ({ children }) => {
                         label: 'Content',
                         icon: '📄',
                         children: [
+                            <div key="landing-ctas">{menuItem({ href: route('admin.content.landing-ctas.index'), label: 'Landing CTAs' })}</div>,
                             <div key="pages">{menuItem({ href: route('admin.content.pages.index'), label: 'Pages' })}</div>,
                             <div key="reviews">{menuItem({ href: route('admin.content.reviews.index'), label: 'Reviews' })}</div>,
                             <div key="messages">{menuItem({ href: route('admin.content.contact-messages.index'), label: 'Messages' })}</div>,
@@ -146,8 +172,18 @@ const AdminLayout = ({ children }) => {
             {/* Main Content */}
             <div className="flex-1 bg-gray-50 flex flex-col">
                 {/* Top Bar */}
-                <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4 flex justify-between items-center">
-                    <div className="text-gray-600">Menu</div>
+                <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-8 py-4 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded border border-gray-200 text-gray-700"
+                            onClick={() => setSidebarOpen(true)}
+                            aria-label="Open menu"
+                        >
+                            ☰
+                        </button>
+                        <div className="text-gray-600">Menu</div>
+                    </div>
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-600">{auth.user.name}</span>
                         <form method="POST" action={route('logout')}>
@@ -162,7 +198,7 @@ const AdminLayout = ({ children }) => {
                 </header>
 
                 {/* Content */}
-                <main className="flex-1 overflow-auto p-8">
+                <main className="flex-1 overflow-auto p-4 md:p-8">
                     {children}
                 </main>
             </div>

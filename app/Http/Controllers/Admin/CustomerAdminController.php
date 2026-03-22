@@ -36,14 +36,14 @@ class CustomerAdminController extends Controller
 
         $customers = $query->paginate(20)->appends($request->query());
 
-        $customers->transform(function ($customer) {
+        $customers->getCollection()->transform(function ($customer) {
             return [
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'email' => $customer->email,
                 'phone' => $customer->phone,
                 'orders_count' => $customer->orders_count,
-                'total_spent' => $customer->orders->sum('total_amount'),
+                'total_spent' => (float) $customer->orders->sum('total_amount'),
                 'created_at' => $customer->created_at->format('M d, Y'),
             ];
         });
@@ -69,7 +69,7 @@ class CustomerAdminController extends Controller
             return [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
-                'total_amount' => $order->total_amount,
+                'total_amount' => (float) $order->total_amount,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
                 'created_at' => $order->created_at->format('M d, Y'),
@@ -99,7 +99,7 @@ class CustomerAdminController extends Controller
             ],
             'orders' => $orders,
             'addresses' => $addresses,
-            'total_spent' => $customer->orders->sum('total_amount'),
+            'total_spent' => (float) $customer->orders->sum('total_amount'),
             'total_orders' => $customer->orders->count(),
         ]);
     }

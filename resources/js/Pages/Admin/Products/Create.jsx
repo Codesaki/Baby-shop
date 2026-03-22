@@ -2,20 +2,22 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
 
-const Create = ({ categories, subCategories }) => {
+const Create = ({ categories, subCategories, mediaImages = [] }) => {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        sku: '',
         category_id: '',
         sub_category_id: '',
         short_description: '',
         long_description: '',
+        quantity: 0,
+        low_stock_threshold: 10,
         price: '',
         discount_price: '',
         is_featured: false,
         is_new_arrival: false,
         is_popular: false,
-        images: []
+        images: [],
+        media_ids: [],
     });
 
     const [subs, setSubs] = useState([]);
@@ -36,9 +38,16 @@ const Create = ({ categories, subCategories }) => {
         setData('images', Array.from(e.target.files));
     };
 
+    const toggleMedia = (id) => {
+        setData(
+            'media_ids',
+            data.media_ids.includes(id) ? data.media_ids.filter((x) => x !== id) : [...data.media_ids, id],
+        );
+    };
+
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.products.store'));
+        post(route('admin.catalog.products.store'));
     };
 
     return (
@@ -56,16 +65,9 @@ const Create = ({ categories, subCategories }) => {
                     />
                     {errors.name && <div className="text-red-600 text-sm">{errors.name}</div>}
                 </div>
-                <div>
-                    <label className="block text-sm font-medium">SKU</label>
-                    <input
-                        type="text"
-                        value={data.sku}
-                        onChange={e => setData('sku', e.target.value)}
-                        className="w-full border p-2 rounded"
-                    />
-                    {errors.sku && <div className="text-red-600 text-sm">{errors.sku}</div>}
-                </div>
+                <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded p-3">
+                    SKU is generated automatically from category and subcategory when you save (e.g. <span className="font-mono">BABY-ONES-000042</span>).
+                </p>
                 <div>
                     <label className="block text-sm font-medium">Category</label>
                     <select
@@ -112,7 +114,29 @@ const Create = ({ categories, subCategories }) => {
                     ></textarea>
                     {errors.long_description && <div className="text-red-600 text-sm">{errors.long_description}</div>}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium">Initial Stock (Qty)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={data.quantity}
+                            onChange={(e) => setData('quantity', e.target.value)}
+                            className="w-full border p-2 rounded"
+                        />
+                        {errors.quantity && <div className="text-red-600 text-sm">{errors.quantity}</div>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Low Stock Threshold</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={data.low_stock_threshold}
+                            onChange={(e) => setData('low_stock_threshold', e.target.value)}
+                            className="w-full border p-2 rounded"
+                        />
+                        {errors.low_stock_threshold && <div className="text-red-600 text-sm">{errors.low_stock_threshold}</div>}
+                    </div>
                     <div>
                         <label className="block text-sm font-medium">Price ($)</label>
                         <input
@@ -180,6 +204,40 @@ const Create = ({ categories, subCategories }) => {
                     />
                     {errors.images && <div className="text-red-600 text-sm">{errors.images}</div>}
                     {errors['images.*'] && <div className="text-red-600 text-sm">{errors['images.*']}</div>}
+                </div>
+
+                <div className="bg-white rounded border p-3">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-medium">Or add from Media Library</div>
+                        <div className="text-xs text-gray-500">{data.media_ids.length} selected</div>
+                    </div>
+                    {mediaImages.length > 0 ? (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                            {mediaImages.map((m) => (
+                                <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => toggleMedia(m.id)}
+                                    className={`relative rounded overflow-hidden border ${
+                                        data.media_ids.includes(m.id) ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
+                                    }`}
+                                    title={m.original_filename}
+                                >
+                                    <div className="aspect-square bg-gray-100">
+                                        <img src={`/storage/${m.path}`} alt={m.original_filename} className="w-full h-full object-cover" />
+                                    </div>
+                                    {data.media_ids.includes(m.id) && (
+                                        <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded">
+                                            ✓
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-sm text-gray-500">No media images found.</div>
+                    )}
+                    {errors.media_ids && <div className="text-red-600 text-sm mt-2">{errors.media_ids}</div>}
                 </div>
                 <div>
                     <button type="submit" disabled={processing} className="px-4 py-2 bg-blue-600 text-white rounded">

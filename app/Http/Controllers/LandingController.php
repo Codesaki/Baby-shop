@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\LandingCta;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -48,15 +50,62 @@ class LandingController extends Controller
                 ->get();
         }
 
-        $categories = \App\Models\Category::withCount(['products' => function ($query) {
+        // Transform products to cast decimal fields to float
+        $castPrices = function ($products) {
+            return $products->map(function ($product) {
+                $product->price = (float) $product->price;
+                $product->discount_price = $product->discount_price ? (float) $product->discount_price : null;
+                return $product;
+            });
+        };
+
+        $featuredProducts = $castPrices($featuredProducts);
+        $newArrivals = $castPrices($newArrivals);
+        $popularProducts = $castPrices($popularProducts);
+
+        $categories = Category::withCount(['products' => function ($query) {
             $query->where('quantity', '>', 0);
         }])->get();
+
+        $topCategories = Category::query()
+            ->withCount(['products' => function ($query) {
+                $query->where('quantity', '>', 0);
+            }])
+            ->orderByDesc('products_count')
+            ->take(5)
+            ->get();
+
+        $categoryShowcases = $topCategories->map(function ($cat) use ($castPrices) {
+            $products = Product::query()
+                ->where('category_id', $cat->id)
+                ->where('quantity', '>', 0)
+                ->with('images')
+                ->latest()
+                ->take(12)
+                ->get();
+
+            return [
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'slug' => $cat->slug,
+                'products_count' => (int) $cat->products_count,
+                'products' => $castPrices($products)->values(),
+            ];
+        })->values();
+
+        $landingCtas = LandingCta::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
 
         return Inertia::render('Landing', [
             'featuredProducts' => $featuredProducts,
             'newArrivals' => $newArrivals,
             'popularProducts' => $popularProducts,
             'categories' => $categories,
+            'categoryShowcases' => $categoryShowcases,
+            'landingCtas' => $landingCtas,
         ]);
     }
 }

@@ -34,9 +34,10 @@ export default function Index({ auth, cart, addresses, defaultAddress }) {
             postal_code: '',
         },
         payment_method: 'mpesa',
-        phone: defaultAddress?.phone || '',
-        notes: '',
-        coupon_code: '',
+        mpesa_number: '',
+        card_number: '',
+        expiry_date: '',
+        cvv: '',
     });
 
     const [sameAsShipping, setSameAsShipping] = useState(true);
@@ -49,6 +50,10 @@ export default function Index({ auth, cart, addresses, defaultAddress }) {
 
     const handleShippingChange = (field, value) => {
         setData('shipping_address', { ...data.shipping_address, [field]: value });
+        // Update top-level phone when shipping phone changes
+        if (field === 'phone') {
+            setData('phone', value);
+        }
         if (sameAsShipping) {
             setData('billing_address', { ...data.billing_address, [field]: value });
         }
@@ -287,6 +292,68 @@ export default function Index({ auth, cart, addresses, defaultAddress }) {
                                     </label>
                                 </div>
                             </div>
+
+                            {/* Payment Details */}
+                            {data.payment_method === 'mpesa' && (
+                                <div className="bg-white rounded-xl shadow-soft-sm p-6">
+                                    <h3 className="text-lg font-semibold mb-4">M-Pesa Details</h3>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">M-Pesa Phone Number</label>
+                                        <input
+                                            type="tel"
+                                            value={data.mpesa_number}
+                                            onChange={(e) => setData('mpesa_number', e.target.value)}
+                                            placeholder="e.g. 254712345678"
+                                            className="w-full border border-light-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                            required
+                                        />
+                                        <p className="text-xs text-light-600 mt-1">Enter the phone number linked to your M-Pesa account</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {data.payment_method === 'card' && (
+                                <div className="bg-white rounded-xl shadow-soft-sm p-6">
+                                    <h3 className="text-lg font-semibold mb-4">Card Details</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Card Number</label>
+                                            <input
+                                                type="text"
+                                                value={data.card_number}
+                                                onChange={(e) => setData('card_number', e.target.value)}
+                                                placeholder="1234 5678 9012 3456"
+                                                className="w-full border border-light-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">Expiry Date</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.expiry_date}
+                                                    onChange={(e) => setData('expiry_date', e.target.value)}
+                                                    placeholder="MM/YY"
+                                                    className="w-full border border-light-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">CVV</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.cvv}
+                                                    onChange={(e) => setData('cvv', e.target.value)}
+                                                    placeholder="123"
+                                                    className="w-full border border-light-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Order Notes */}
                             <div className="bg-white rounded-xl shadow-soft-sm p-6">

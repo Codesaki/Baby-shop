@@ -39,7 +39,16 @@ const Index = ({ products }) => {
                             <td className="p-2">{p.name}</td>
                             <td className="p-2">{p.sku}</td>
                             <td className="p-2">{p.category?.name}</td>
-                            <td className="p-2">{p.quantity}</td>
+                            <td className="p-2">
+                                <div className="flex items-center gap-2 justify-center">
+                                    <span>{p.quantity}</span>
+                                    {typeof p.low_stock_threshold !== 'undefined' && p.quantity <= p.low_stock_threshold && (
+                                        <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-800">
+                                            Low
+                                        </span>
+                                    )}
+                                </div>
+                            </td>
                             <td className="p-2">{new Date(p.created_at).toLocaleDateString()}</td>
                             <td className="p-2">
                                 <Link

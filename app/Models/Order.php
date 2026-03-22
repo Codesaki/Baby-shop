@@ -18,6 +18,7 @@ class Order extends Model
         'billing_address',
         'phone',
         'notes',
+        'viewed_at',
     ];
 
     protected $casts = [

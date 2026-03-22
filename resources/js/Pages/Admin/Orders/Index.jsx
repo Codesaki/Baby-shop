@@ -5,6 +5,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 export default function Index({ orders, stats, filters = {} }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState(filters.payment_status || '');
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
 
@@ -17,8 +18,9 @@ export default function Index({ orders, stats, filters = {} }) {
         const params = {};
         if (searchTerm) params.search = searchTerm;
         if (statusFilter) params.status = statusFilter;
-        if (dateFrom) params.date_from = dateFrom;
-        if (dateTo) params.date_to = dateTo;
+        if (paymentStatusFilter) params.payment_status = paymentStatusFilter;
+        if (dateFrom) params.start_date = dateFrom;
+        if (dateTo) params.end_date = dateTo;
         
         if (ordersIndexRoute) {
             get(ordersIndexRoute, params);
@@ -28,6 +30,7 @@ export default function Index({ orders, stats, filters = {} }) {
     const clearFilters = () => {
         setSearchTerm('');
         setStatusFilter('');
+        setPaymentStatusFilter('');
         setDateFrom('');
         setDateTo('');
         if (ordersIndexRoute) {
@@ -117,7 +120,7 @@ export default function Index({ orders, stats, filters = {} }) {
                 {/* Filters */}
                 <div className="bg-white p-6 rounded-lg shadow-sm border">
                     <h3 className="text-lg font-medium mb-4">Filters</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
                             <input
@@ -138,10 +141,25 @@ export default function Index({ orders, stats, filters = {} }) {
                             >
                                 <option value="">All Status</option>
                                 <option value="pending">Pending</option>
-                                <option value="processing">Processing</option>
+                                <option value="paid">Paid</option>
                                 <option value="shipped">Shipped</option>
                                 <option value="delivered">Delivered</option>
                                 <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                            <select
+                                value={paymentStatusFilter}
+                                onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Payment Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="failed">Failed</option>
+                                <option value="refunded">Refunded</option>
                             </select>
                         </div>
 

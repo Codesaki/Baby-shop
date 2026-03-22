@@ -8,9 +8,12 @@ use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Services\MpesaService;
+use App\Services\PesapalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 
@@ -39,9 +42,21 @@ class CheckoutController extends Controller
     {
         $request->validate([
             'shipping_address' => 'required|array',
+            'shipping_address.name' => 'required|string|max:255',
+            'shipping_address.phone' => 'required|string|max:20',
+            'shipping_address.address_line' => 'required|string',
+            'shipping_address.city' => 'required|string|max:100',
             'billing_address' => 'required|array',
+            'billing_address.name' => 'required|string|max:255',
+            'billing_address.phone' => 'required|string|max:20',
+            'billing_address.address_line' => 'required|string',
+            'billing_address.city' => 'required|string|max:100',
             'payment_method' => 'required|in:mpesa,card',
-            'phone' => 'required|string',
+            'mpesa_number' => 'required_if:payment_method,mpesa|string|max:15',
+            'card_number' => 'required_if:payment_method,card|string|max:19',
+            'expiry_date' => 'required_if:payment_method,card|string|max:5',
+            'cvv' => 'required_if:payment_method,card|string|max:4',
+            'phone' => 'required|string|max:20',
             'notes' => 'nullable|string',
             'coupon_code' => 'nullable|string',
         ]);
@@ -78,7 +93,9 @@ class CheckoutController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $cart, $total, $discount) {
+        $orderId = null;
+        
+        DB::transaction(function () use ($request, $cart, $total, $discount, &$orderId) {
             // Create order
             $order = Order::create([
                 'user_id' => Auth::id(),
@@ -86,8 +103,11 @@ class CheckoutController extends Controller
                 'shipping_address' => $request->shipping_address,
                 'billing_address' => $request->billing_address,
                 'phone' => $request->phone,
+                'payment_method' => $request->payment_method,
                 'notes' => $request->notes,
             ]);
+            
+            $orderId = $order->id;
 
             // Create order items
             foreach ($cart->items as $item) {
@@ -120,12 +140,93 @@ class CheckoutController extends Controller
             $cart->items()->delete();
         });
 
-        return redirect()->route('checkout.success')->with('order', $order ?? null);
+        // Initiate payment
+        $order = Order::find($orderId);
+        $payment = $order->payment;
+
+        if ($request->payment_method === 'mpesa') {
+            $mpesaService = new MpesaService();
+            $result = $mpesaService->initiateSTKPush(
+                $request->mpesa_number,
+                $total,
+                $order->order_number,
+                "Payment for order {$order->order_number}"
+            );
+
+            if (isset($result['ResponseCode']) && $result['ResponseCode'] == '0') {
+                $payment->update([
+                    'transaction_reference' => $result['CheckoutRequestID'],
+                    'gateway_response' => $result,
+                ]);
+            } else {
+                // Handle error, but for now, proceed
+                Log::error('MPESA STK Push failed', $result);
+            }
+        } elseif ($request->payment_method === 'card') {
+            $pesapalService = new PesapalService();
+            $result = $pesapalService->initiatePayment([
+                'amount' => $total,
+                'order_id' => $order->id,
+                'email' => Auth::user()->email ?? 'guest@example.com',
+                'phone' => $request->phone,
+                'first_name' => $request->shipping_address['name'],
+                'last_name' => '',
+            ]);
+
+            if (isset($result['order_tracking_id'])) {
+                $payment->update([
+                    'transaction_reference' => $result['order_tracking_id'],
+                    'gateway_response' => $result,
+                ]);
+                // Redirect to pesapal payment page
+                return redirect($result['redirect_url']);
+            } else {
+                Log::error('PesaPal initiation failed', $result);
+            }
+        }
+
+        return redirect()->route('checkout.success')->with('orderId', $orderId);
     }
 
-    public function success()
+    public function success(Request $request)
     {
-        return Inertia::render('Checkout/Success');
+        $orderId = $request->session()->get('orderId');
+        $order = $orderId ? Order::with(['items.product.images', 'items.variant'])->find($orderId) : null;
+        
+        if (!$order) {
+            return redirect()->route('landing')->withErrors(['order' => 'Order not found.']);
+        }
+        
+        // Transform items to ensure prices are floats
+        $items = $order->items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'variant_id' => $item->variant_id,
+                'quantity' => $item->quantity,
+                'price' => (float) $item->price,
+                'total' => (float) $item->total,
+                'product' => $item->product,
+                'variant' => $item->variant,
+            ];
+        });
+        
+        return Inertia::render('Checkout/Success', [
+            'order' => [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'status' => $order->status,
+                'payment_method' => $order->payment_method,
+                'payment_status' => $order->payment_status,
+                'total_amount' => (float) $order->total_amount,
+                'shipping_address' => $order->shipping_address,
+                'billing_address' => $order->billing_address,
+                'phone' => $order->phone,
+                'notes' => $order->notes,
+                'created_at' => $order->created_at->toIso8601String(),
+                'items' => $items,
+            ],
+        ]);
     }
 
     private function getCart()
