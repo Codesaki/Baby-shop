@@ -15,25 +15,26 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Sales metrics
+        // Sales metrics - based on order status (paid/shipped orders generate revenue)
         $today = Carbon::now()->format('Y-m-d');
         $thisMonth = Carbon::now()->format('Y-m');
 
-        $salesToday = Order::whereDate('created_at', $today)
-            ->where('payment_status', 'paid')
+        $salesToday = Order::whereDate('paid_at', $today)
+            ->whereIn('status', ['paid', 'shipped'])
             ->sum('total_amount');
 
-        $salesThisMonth = Order::whereYear('created_at', Carbon::now()->year)
-            ->whereMonth('created_at', Carbon::now()->month)
-            ->where('payment_status', 'paid')
+        $salesThisMonth = Order::whereYear('paid_at', Carbon::now()->year)
+            ->whereMonth('paid_at', Carbon::now()->month)
+            ->whereIn('status', ['paid', 'shipped'])
             ->sum('total_amount');
 
-        $totalSalesAllTime = Order::where('payment_status', 'paid')
+        $totalSalesAllTime = Order::whereIn('status', ['paid', 'shipped'])
             ->sum('total_amount');
 
         // Order metrics
         $pendingOrders = Order::where('status', 'pending')->count();
-        $processingOrders = Order::where('status', 'processing')->count();
+        $paidOrders = Order::where('status', 'paid')->count();
+        $shippedOrders = Order::where('status', 'shipped')->count();
         $completedOrders = Order::where('status', 'delivered')->count();
         $cancelledOrders = Order::where('status', 'cancelled')->count();
 
@@ -48,7 +49,7 @@ class DashboardController extends Controller
             ->count();
 
         // Average order value
-        $totalOrders = Order::where('payment_status', 'paid')->count();
+        $totalOrders = Order::whereIn('status', ['paid', 'shipped'])->count();
         $averageOrderValue = $totalOrders > 0 ? $totalSalesAllTime / $totalOrders : 0;
 
         // Inventory alerts
@@ -72,7 +73,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $order->id,
                     'order_number' => $order->order_number,
-                    'customer_name' => $order->user->name,
+                    'customer_name' => $order->user?->name ?? 'Guest',
                     'total_amount' => (float) $order->total_amount,
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
@@ -116,7 +117,9 @@ class DashboardController extends Controller
             'salesThisMonth' => $salesThisMonth,
             'totalSalesAllTime' => $totalSalesAllTime,
             'pendingOrders' => $pendingOrders,
-            'processingOrders' => $processingOrders,
+            'pendingOrders' => $pendingOrders,
+            'paidOrders' => $paidOrders,
+            'shippedOrders' => $shippedOrders,
             'completedOrders' => $completedOrders,
             'cancelledOrders' => $cancelledOrders,
             'newCustomersToday' => $newCustomersToday,
@@ -140,8 +143,8 @@ class DashboardController extends Controller
             $date = Carbon::now()->subDays($i)->format('Y-m-d');
             $labels[] = Carbon::parse($date)->format('M d');
 
-            $sales = Order::whereDate('created_at', $date)
-                ->where('payment_status', 'paid')
+            $sales = Order::whereDate('paid_at', $date)
+                ->whereIn('status', ['paid', 'shipped'])
                 ->sum('total_amount');
 
             $last30Days[] = (float)$sales;

@@ -150,7 +150,8 @@ const Create = ({ categories, subCategories, mediaImages = [] }) => {
                         {errors.price && <div className="text-red-600 text-sm">{errors.price}</div>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Discount Price ($)</label>
+                        <label className="block text-sm font-medium">Discount Amount ($)</label>
+                        <p className="text-xs text-gray-500 mb-1">Enter the discount amount to subtract from the price</p>
                         <input
                             type="number"
                             step="0.01"

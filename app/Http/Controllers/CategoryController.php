@@ -8,8 +8,10 @@ use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
-    public function show(Category $category)
+    public function show($slug)
     {
+        $category = Category::where('slug', $slug)->firstOrFail();
+        
         $products = $category->products()
             ->where('quantity', '>', 0)
             ->with('images')

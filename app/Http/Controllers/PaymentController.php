@@ -21,23 +21,18 @@ class PaymentController extends Controller
         if ($payment) {
             $resultCode = $data['Body']['stkCallback']['ResultCode'];
             if ($resultCode == 0) {
-                // Success
+                // Success - mark order as paid
+                $payment->order->markPaid();
                 $payment->update([
                     'status' => 'completed',
                     'gateway_response' => array_merge($payment->gateway_response ?? [], $data),
                 ]);
-                $payment->order->update([
-                    'status' => 'paid',
-                    'payment_status' => 'paid',
-                ]);
             } else {
-                // Failed
+                // Failed - mark order as cancelled
+                $payment->order->markCancelled();
                 $payment->update([
                     'status' => 'failed',
                     'gateway_response' => array_merge($payment->gateway_response ?? [], $data),
-                ]);
-                $payment->order->update([
-                    'payment_status' => 'failed',
                 ]);
             }
         }
@@ -61,16 +56,15 @@ class PaymentController extends Controller
 
             if (isset($status['payment_status_description'])) {
                 if ($status['payment_status_description'] === 'Completed') {
+                    // Mark order as paid
+                    $payment->order->markPaid();
                     $payment->update(['status' => 'completed']);
-                    $payment->order->update([
-                        'status' => 'paid',
-                        'payment_status' => 'paid',
-                    ]);
                 } elseif ($status['payment_status_description'] === 'Failed') {
+                    // Mark order as cancelled
+                    $payment->order->markCancelled();
                     $payment->update(['status' => 'failed']);
-                    $payment->order->update(['payment_status' => 'failed']);
                 }
-                // Other statuses like Pending
+                // Other statuses like Pending remain as pending
             }
         }
 

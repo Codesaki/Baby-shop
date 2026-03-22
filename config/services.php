@@ -47,6 +47,7 @@ return [
         'shortcode' => env('MPESA_SHORTCODE'),
         'passkey' => env('MPESA_PASSKEY'),
         'base_url' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
+        'callback_url' => env('MPESA_CALLBACK_URL'),
     ],
 
     'pesapal' => [

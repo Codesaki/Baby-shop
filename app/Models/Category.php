@@ -9,12 +9,7 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'parent_id'];
-
-    public function getRouteKeyName()
-    {
-        return 'slug';
-    }
+    protected $fillable = ['name', 'slug', 'parent_id', 'description', 'image_path'];
 
     public function parent()
     {

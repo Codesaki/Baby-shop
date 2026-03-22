@@ -19,7 +19,7 @@ class OrderController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        // Cast decimal fields to float
+        // Cast decimal fields to float for JSON serialization
         $orders->getCollection()->transform(function ($order) {
             $order->total_amount = (float) $order->total_amount;
             $order->items->each(function ($item) {
@@ -44,20 +44,22 @@ class OrderController extends Controller
         $order->load([
             'items.product.images',
             'items.variant',
-            'shippingAddress',
-            'billingAddress',
             'payment'
         ]);
 
-        // Cast decimal fields to float
-        $order->total_amount = (float) $order->total_amount;
-        $order->items->each(function ($item) {
-            $item->price = (float) $item->price;
-            $item->total = (float) $item->total;
-        });
+        // Convert to array and ensure all monetary values are floats
+        $orderData = $order->toArray();
+        $orderData['total_amount'] = (float) $orderData['total_amount'];
+        
+        // Convert item amounts to float
+        $orderData['items'] = collect($orderData['items'])->map(function ($item) {
+            $item['price'] = (float) $item['price'];
+            $item['total'] = (float) $item['total'];
+            return $item;
+        })->toArray();
 
         return Inertia::render('Orders/Show', [
-            'order' => $order,
+            'order' => $orderData,
         ]);
     }
 
@@ -174,26 +176,19 @@ class OrderController extends Controller
 
     public function cancel(Request $request, Order $order)
     {
-        // Ensure user can only cancel their own orders
-        if ($order->user_id !== $request->user()->id) {
+        // For authenticated users, ensure they're cancelling their own orders
+        // For guest orders (user_id is null), allow cancellation within the same session
+        if ($order->user_id !== null && $order->user_id !== auth()->id()) {
             abort(403);
         }
 
         // Only allow cancellation of pending orders
         if (!in_array($order->status, ['pending', 'processing'])) {
-            return redirect()->back()->with('error', 'This order cannot be cancelled at this time.');
+            return response()->json(['error' => 'This order cannot be cancelled at this time.'], 422);
         }
 
-        DB::transaction(function () use ($order, $request) {
-            $order->update(['status' => 'cancelled']);
-
-            // Log cancellation
-            $order->statusHistory()->create([
-                'old_status' => $order->status,
-                'new_status' => 'cancelled',
-                'notes' => 'Cancelled by customer',
-                'changed_by' => $request->user()->id,
-            ]);
+        DB::transaction(function () use ($order) {
+            $order->markCancelled();
 
             // Restore inventory
             foreach ($order->items as $item) {
@@ -204,6 +199,10 @@ class OrderController extends Controller
                 }
             }
         });
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => 'Order cancelled successfully.'], 200);
+        }
 
         return redirect()->back()->with('success', 'Order cancelled successfully.');
     }

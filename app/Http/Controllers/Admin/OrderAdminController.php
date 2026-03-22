@@ -47,8 +47,8 @@ class OrderAdminController extends Controller
             return [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
-                'customer_name' => $order->user->name,
-                'customer_email' => $order->user->email,
+                'customer_name' => $order->user?->name ?? 'Guest',
+                'customer_email' => $order->user?->email ?? 'N/A',
                 'total_amount' => (float) $order->total_amount,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
@@ -61,19 +61,21 @@ class OrderAdminController extends Controller
                     ];
                 })->toArray(),
                 'user' => [
-                    'id' => $order->user->id,
-                    'name' => $order->user->name,
+                    'id' => $order->user?->id,
+                    'name' => $order->user?->name ?? 'Guest',
                 ],
             ];
         });
 
-        // Calculate stats
+        // Calculate stats - only count paid/shipped orders for revenue
         $allOrders = Order::all();
+        $paidOrders = $allOrders->whereIn('status', ['paid', 'shipped']);
+        
         $stats = [
             'total_orders' => $allOrders->count(),
             'pending_orders' => $allOrders->where('status', 'pending')->count(),
             'shipped_orders' => $allOrders->where('status', 'shipped')->count(),
-            'total_revenue' => (float) $allOrders->sum('total_amount'),
+            'total_revenue' => (float) $paidOrders->sum('total_amount'),
         ];
 
         return Inertia::render('Admin/Orders/Index', [
@@ -123,10 +125,10 @@ class OrderAdminController extends Controller
                 'updated_at' => $order->updated_at->format('M d, Y H:i'),
             ],
             'customer' => [
-                'id' => $order->user->id,
-                'name' => $order->user->name,
-                'email' => $order->user->email,
-                'phone' => $order->user->phone,
+                'id' => $order->user?->id,
+                'name' => $order->user?->name ?? 'Guest',
+                'email' => $order->user?->email ?? 'N/A',
+                'phone' => $order->user?->phone ?? $order->phone,
             ],
             'shipping_address' => $order->shipping_address,
             'billing_address' => $order->billing_address,
@@ -136,12 +138,28 @@ class OrderAdminController extends Controller
 
     public function update(Request $request, Order $order)
     {
+        // Check if order is immutable (cancelled orders cannot be changed)
+        if ($order->isImmutable()) {
+            return redirect()->back()->withErrors(['status' => 'Cancelled orders cannot be modified.']);
+        }
+
         $validated = $request->validate([
-            'status' => 'required|in:pending,paid,processing,shipped,delivered,cancelled',
+            'status' => 'required|in:pending,paid,shipped,delivered,cancelled',
             'tracking_number' => 'nullable|string',
             'estimated_delivery' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
+
+        // Ensure only paid orders can be marked as shipped
+        if ($validated['status'] === 'shipped' && $order->status !== 'paid') {
+            return redirect()->back()->withErrors(['status' => 'Only paid orders can be marked as shipped.']);
+        }
+
+        // If changing from paid to cancelled, handle revenue deduction
+        if ($order->status === 'paid' && $validated['status'] === 'cancelled') {
+            // The revenue will be automatically handled by the getRevenueAmount() method
+            // which returns 0 for cancelled orders
+        }
 
         $order->update($validated);
 

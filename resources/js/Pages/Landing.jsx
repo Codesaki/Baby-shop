@@ -362,13 +362,25 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                                 <Link
                                     key={category.id}
                                     href={route('categories.show', category.slug)}
-                                    className="block rounded-xl overflow-hidden shadow-soft hover:shadow-soft-lg transition-shadow bg-white"
+                                    className="block rounded-xl overflow-hidden shadow-soft hover:shadow-soft-lg transition-shadow bg-white group"
                                 >
-                                    <div className="h-40 md:h-48 bg-gradient-to-br from-primary-50 to-secondary-50 w-full flex items-center justify-center">
-                                        <div className="text-center">
-                                            <i className="fa-solid fa-tag text-4xl text-primary-600 mb-2"></i>
-                                            <div className="text-primary-800 font-semibold">{category.products_count} products</div>
-                                        </div>
+                                    <div 
+                                        className="h-40 md:h-48 bg-gradient-to-br from-primary-50 to-secondary-50 w-full flex items-center justify-center bg-cover bg-center relative"
+                                        style={{ backgroundImage: category.image_path ? `url(/storage/${category.image_path})` : 'none' }}
+                                    >
+                                        {!category.image_path && (
+                                            <div className="text-center">
+                                                <i className="fa-solid fa-tag text-4xl text-primary-600 mb-2"></i>
+                                                <div className="text-primary-800 font-semibold">{category.products_count} products</div>
+                                            </div>
+                                        )}
+                                        {category.image_path && (
+                                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                <div className="text-center text-white">
+                                                    <div className="font-semibold">{category.products_count} products</div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-3 bg-white">
                                         <h3 className="font-semibold text-center">{category.name}</h3>

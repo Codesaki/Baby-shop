@@ -1,8 +1,173 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import MainLayout from '@/Layouts/MainLayout';
 
 export default function Success({ auth, order }) {
     const Layout = MainLayout;
+    const [timeRemaining, setTimeRemaining] = useState(120); // 2 minutes in seconds
+    const [isCancelled, setIsCancelled] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [hasInitiatedCancel, setHasInitiatedCancel] = useState(false);
+
+    // Countdown timer for pending MPESA orders
+    useEffect(() => {
+        // Only show timer if order is pending and payment method is MPESA
+        if (order.status !== 'pending' || order.payment_method !== 'mpesa') {
+            return;
+        }
+
+        const timer = setInterval(() => {
+            setTimeRemaining(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    // Auto-cancel order when timer reaches 0
+                    if (!hasInitiatedCancel) {
+                        handleAutoCancelOrder();
+                    }
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [order.status, order.payment_method, hasInitiatedCancel]);
+
+    const handleAutoCancelOrder = async () => {
+        setHasInitiatedCancel(true);
+        setIsProcessing(true);
+
+        try {
+            const response = await fetch(route('orders.cancel', order.id), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                },
+            });
+
+            if (response.ok) {
+                setIsCancelled(true);
+                // Refresh order data
+                setTimeout(() => {
+                    router.reload();
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Error cancelling order:', error);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    // Show cancelled state
+    if (isCancelled || order.status === 'cancelled') {
+        return (
+            <Layout>
+                <Head title="Order Cancelled - Baby Shop" />
+
+                <div className="min-h-screen bg-light-50">
+                    {/* Header */}
+                    <div className="bg-white shadow-soft-sm">
+                        <div className="max-w-7xl mx-auto px-4 py-6">
+                            <nav className="flex items-center space-x-2 text-sm text-light-600">
+                                <Link href={route('landing')} className="hover:text-primary-600">Home</Link>
+                                <span>/</span>
+                                <Link href={route('cart.index')} className="hover:text-primary-600">Cart</Link>
+                                <span>/</span>
+                                <Link href={route('checkout.index')} className="hover:text-primary-600">Checkout</Link>
+                                <span>/</span>
+                                <span className="text-light-900 font-medium">Order Cancelled</span>
+                            </nav>
+                            <h1 className="text-3xl font-bold text-light-900 mt-2">Order Cancelled</h1>
+                        </div>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto px-4 py-12">
+                        <div className="bg-white rounded-xl shadow-soft-sm p-8">
+                            {/* Cancellation Message */}
+                            <div className="text-center mb-8">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i className="fa-solid fa-times text-2xl text-red-600"></i>
+                                </div>
+                                <h2 className="text-2xl font-bold text-light-900 mb-2">Order Cancelled</h2>
+                                <p className="text-light-600">
+                                    Your order was cancelled due to non-payment. No payment was processed.
+                                </p>
+                            </div>
+
+                            {/* Order Details */}
+                            <div className="border-t pt-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Order Information */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-4">Order Information</h3>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-light-600">Order Number:</span>
+                                                <span className="font-medium">#{order.order_number}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-light-600">Status:</span>
+                                                <span className="font-medium capitalize text-red-600">{order.status}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-light-600">Total Amount:</span>
+                                                <span className="font-medium">Ksh {order.total_amount.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* What Happens Next */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-4">What Happens Next?</h3>
+                                        <ul className="text-sm text-light-600 space-y-2">
+                                            <li className="flex items-start">
+                                                <span className="text-blue-600 mr-2">✓</span>
+                                                <span>Stock has been restored to our inventory</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="text-blue-600 mr-2">✓</span>
+                                                <span>No charges will appear on your account</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="text-blue-600 mr-2">✓</span>
+                                                <span>You can place a new order at any time</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                                    <Link
+                                        href={route('cart.index')}
+                                        className="flex-1 bg-primary-600 text-white text-center py-3 px-6 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                                    >
+                                        Back to Cart
+                                    </Link>
+                                    <Link
+                                        href={route('landing')}
+                                        className="flex-1 bg-light-100 text-light-900 text-center py-3 px-6 rounded-lg font-medium hover:bg-light-200 transition-colors"
+                                    >
+                                        Continue Shopping
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>
@@ -127,14 +292,43 @@ export default function Success({ auth, order }) {
                                 </div>
                             </div>
 
-                            {/* Payment Instructions */}
+                            {/* Payment Instructions with Timer */}
                             {order.payment_method === 'mpesa' && order.status === 'pending' && (
-                                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <h4 className="font-medium text-blue-900 mb-2">Payment Instructions</h4>
-                                    <p className="text-sm text-blue-800">
-                                        Please complete your M-Pesa payment using the STK Push sent to your phone.
-                                        Your order will be processed once payment is confirmed.
-                                    </p>
+                                <div className="mt-6 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div>
+                                            <h4 className="font-bold text-blue-900 mb-1 text-lg">Payment Instructions</h4>
+                                            <p className="text-sm text-blue-800">
+                                                Please complete your M-Pesa payment using the STK Push sent to your phone. Your order will be processed once payment is confirmed.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Timer */}
+                                    <div className="mt-4 pt-4 border-t border-blue-200">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-blue-900">Time remaining to complete payment:</span>
+                                            <div className={`text-2xl font-bold font-mono ${
+                                                timeRemaining <= 30 ? 'text-red-600' : 'text-blue-600'
+                                            }`}>
+                                                {formatTime(timeRemaining)}
+                                            </div>
+                                        </div>
+                                        {timeRemaining <= 30 && (
+                                            <p className="text-xs text-red-600 mt-2 flex items-center">
+                                                <i className="fa-solid fa-exclamation-circle mr-1"></i>
+                                                Your order will be cancelled if payment is not completed in time.
+                                            </p>
+                                        )}
+                                        <div className="w-full bg-blue-200 rounded-full h-2 mt-3">
+                                            <div
+                                                className={`h-full rounded-full transition-all ${
+                                                    timeRemaining <= 30 ? 'bg-red-600' : 'bg-blue-600'
+                                                }`}
+                                                style={{ width: `${(timeRemaining / 120) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

@@ -54,11 +54,13 @@ Route::get('/checkout/success', [\App\Http\Controllers\CheckoutController::class
 Route::post('/mpesa/callback', [\App\Http\Controllers\PaymentController::class, 'mpesaCallback'])->name('mpesa.callback');
 Route::get('/pesapal/callback', [\App\Http\Controllers\PaymentController::class, 'pesapalCallback'])->name('pesapal.callback');
 
-// order routes
+// order cancel route - available to both guests and authenticated users
+Route::patch('/orders/{order}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
+
+// order routes (require authentication)
 Route::middleware('auth')->group(function () {
     Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
-    Route::patch('/orders/{order}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
 
     // wishlist routes
     Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');

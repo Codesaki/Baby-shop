@@ -46,16 +46,18 @@ class CheckoutController extends Controller
             'shipping_address.phone' => 'required|string|max:20',
             'shipping_address.address_line' => 'required|string',
             'shipping_address.city' => 'required|string|max:100',
+            'shipping_address.postal_code' => 'nullable|string|max:20',
             'billing_address' => 'required|array',
             'billing_address.name' => 'required|string|max:255',
             'billing_address.phone' => 'required|string|max:20',
             'billing_address.address_line' => 'required|string',
             'billing_address.city' => 'required|string|max:100',
+            'billing_address.postal_code' => 'nullable|string|max:20',
             'payment_method' => 'required|in:mpesa,card',
-            'mpesa_number' => 'required_if:payment_method,mpesa|string|max:15',
-            'card_number' => 'required_if:payment_method,card|string|max:19',
-            'expiry_date' => 'required_if:payment_method,card|string|max:5',
-            'cvv' => 'required_if:payment_method,card|string|max:4',
+            'mpesa_number' => 'nullable|required_if:payment_method,mpesa|string|max:15',
+            'card_number' => 'nullable|required_if:payment_method,card|string|max:19',
+            'expiry_date' => 'nullable|required_if:payment_method,card|string|max:5',
+            'cvv' => 'nullable|required_if:payment_method,card|string|max:4',
             'phone' => 'required|string|max:20',
             'notes' => 'nullable|string',
             'coupon_code' => 'nullable|string',
@@ -153,14 +155,24 @@ class CheckoutController extends Controller
                 "Payment for order {$order->order_number}"
             );
 
-            if (isset($result['ResponseCode']) && $result['ResponseCode'] == '0') {
+            // Check if there was an error
+            if (isset($result['error'])) {
+                Log::error('MPESA initiation failed', $result);
+                // Mark order as cancelled if payment initiation fails
+                $order->markCancelled();
+                return back()->withErrors(['payment' => $result['error']]);
+            } else if (isset($result['ResponseCode']) && $result['ResponseCode'] == '0') {
+                // Mark order as pending since STK push was successfully initiated
+                $order->markPending();
                 $payment->update([
                     'transaction_reference' => $result['CheckoutRequestID'],
                     'gateway_response' => $result,
                 ]);
             } else {
-                // Handle error, but for now, proceed
                 Log::error('MPESA STK Push failed', $result);
+                // Mark order as cancelled if unexpected error occurs
+                $order->markCancelled();
+                return back()->withErrors(['payment' => 'Failed to initiate payment. Please try again.']);
             }
         } elseif ($request->payment_method === 'card') {
             $pesapalService = new PesapalService();
@@ -174,6 +186,8 @@ class CheckoutController extends Controller
             ]);
 
             if (isset($result['order_tracking_id'])) {
+                // Mark order as pending since payment initiation was successful
+                $order->markPending();
                 $payment->update([
                     'transaction_reference' => $result['order_tracking_id'],
                     'gateway_response' => $result,
@@ -182,6 +196,9 @@ class CheckoutController extends Controller
                 return redirect($result['redirect_url']);
             } else {
                 Log::error('PesaPal initiation failed', $result);
+                // Mark order as cancelled if payment initiation fails
+                $order->markCancelled();
+                return back()->withErrors(['payment' => 'Failed to initiate payment. Please try again.']);
             }
         }
 

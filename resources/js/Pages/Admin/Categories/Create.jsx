@@ -3,13 +3,31 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
 
 const Create = () => {
+    const [imagePreview, setImagePreview] = useState(null);
+    
     const { data, setData, post, processing, errors } = useForm({
-        name: ''
+        name: '',
+        description: '',
+        image: null,
     });
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.catalog.categories.store'));
+        post(route('admin.catalog.categories.store'), {
+            forceFormData: true,
+        });
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData('image', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     return (
@@ -24,9 +42,38 @@ const Create = () => {
                         value={data.name}
                         onChange={e => setData('name', e.target.value)}
                         className="w-full border p-2 rounded"
+                        required
                     />
                     {errors.name && <div className="text-red-600 text-sm">{errors.name}</div>}
                 </div>
+
+                <div>
+                    <label className="block text-sm font-medium">Description</label>
+                    <textarea
+                        value={data.description}
+                        onChange={e => setData('description', e.target.value)}
+                        className="w-full border p-2 rounded"
+                        rows={4}
+                    />
+                    {errors.description && <div className="text-red-600 text-sm">{errors.description}</div>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-2">Category Image</label>
+                    {imagePreview && (
+                        <div className="mb-3">
+                            <img src={imagePreview} alt="Preview" className="h-40 w-40 object-cover rounded border" />
+                        </div>
+                    )}
+                    <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                        onChange={handleImageChange}
+                        className="w-full border p-2 rounded"
+                    />
+                    {errors.image && <div className="text-red-600 text-sm">{errors.image}</div>}
+                </div>
+
                 <div>
                     <button type="submit" disabled={processing} className="px-4 py-2 bg-blue-600 text-white rounded">
                         Save
