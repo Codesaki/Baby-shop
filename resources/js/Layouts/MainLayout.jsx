@@ -4,14 +4,34 @@ import { useState, useEffect } from 'react';
 export default function MainLayout({ children }) {
     const { auth, cart, flash } = usePage().props;
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isAtTop, setIsAtTop] = useState(true);
+    const [isNavVisible, setIsNavVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 0);
+        const handleScroll = () => {
+            const currentY = window.scrollY;
+            setIsAtTop(currentY === 0);
+            setIsScrolled(currentY > 0);
+
+            if (currentY <= 0) {
+                setIsNavVisible(true);
+            } else if (currentY > lastScrollY) {
+                // scrolling down
+                setIsNavVisible(false);
+            } else {
+                // scrolling up
+                setIsNavVisible(true);
+            }
+
+            setLastScrollY(currentY);
+        };
+
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    }, [lastScrollY]);
 
     const navLinks = [
         { name: 'Baby Care', slug: 'baby-care' },
@@ -43,9 +63,10 @@ export default function MainLayout({ children }) {
     return (
         <div className="bg-white min-h-screen">
             <header className="sticky top-0 z-50">
-                {/* Socials Strip - Hidden on Mobile */}
-                <div className="hidden md:block bg-light-600 text-white">
-                    <div className="max-w-7xl mx-auto px-4 py-2 flex justify-center gap-6">
+                {/* Socials Strip - Hidden on Mobile; only at top */}
+                {isAtTop && (
+                    <div className="hidden md:block bg-light-600 text-white">
+                        <div className="max-w-7xl mx-auto px-4 py-2 flex justify-center gap-6">
                         <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity" aria-label="TikTok">
                             <i className="fa-brands fa-tiktok"></i>
                         </a>
@@ -60,10 +81,11 @@ export default function MainLayout({ children }) {
                         </a>
                     </div>
                 </div>
+                )}
 
                 {/* Main Header */}
                 <nav
-                    className={`transition-all duration-300 ${
+                    className={`transition-all duration-300 transform ${isNavVisible ? 'translate-y-0' : '-translate-y-full'} ${
                         isScrolled ? 'bg-primary-700/95 shadow-soft-lg backdrop-blur-xs' : 'bg-white/80 backdrop-blur-xs border-b border-light-100'
                     }`}
                 >
@@ -208,6 +230,60 @@ export default function MainLayout({ children }) {
             )}
 
             <main>{children}</main>
+
+            {/* Shared Footer */}
+            <footer id="contact" className="bg-light-200 py-16 border-t border-light-300">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                        <div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <i className="fa-solid fa-baby text-3xl"></i>
+                                <div className="font-architects text-xl text-blue-600 leading-none">
+                                    Blimey
+                                    <div className="text-xs font-sans text-blue-600 -mt-1">Baby Shop</div>
+                                </div>
+                            </div>
+                            <p className="text-sm text-light-700">Your trusted partner in providing the best products for your little ones.</p>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-light-900 mb-4">Shop</h4>
+                            <ul className="space-y-2 text-sm text-light-700">
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Clothing</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Toys</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Feeding</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Nursery</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-light-900 mb-4">Support</h4>
+                            <ul className="space-y-2 text-sm text-light-700">
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Contact Us</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">FAQ</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Shipping</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Returns</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-light-900 mb-4">Legal</h4>
+                            <ul className="space-y-2 text-sm text-light-700">
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Privacy</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Terms</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Cookies</a></li>
+                                <li><a href="#" className="hover:text-primary-500 transition-colors">Accessibility</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-light-300 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center">
+                        <p className="text-sm text-light-700">© 2026 Blimey Baby Shop. All rights reserved.</p>
+                        <div className="flex gap-4 mt-4 md:mt-0">
+                            <a href="#" className="text-light-700 hover:text-primary-500 transition-colors">Facebook</a>
+                            <a href="#" className="text-light-700 hover:text-primary-500 transition-colors">Instagram</a>
+                            <a href="#" className="text-light-700 hover:text-primary-500 transition-colors">TikTok</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }

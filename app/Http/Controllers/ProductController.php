@@ -16,8 +16,23 @@ class ProductController extends Controller
         $product->price = (float) $product->price;
         $product->discount_price = $product->discount_price ? (float) $product->discount_price : null;
 
+        $relatedProducts = Product::query()
+            ->where('category_id', $product->category_id)
+            ->where('id', '<>', $product->id)
+            ->where('quantity', '>', 0)
+            ->with('images')
+            ->take(8)
+            ->get();
+
+        $relatedProducts = $relatedProducts->map(function ($p) {
+            $p->price = (float) $p->price;
+            $p->discount_price = $p->discount_price ? (float) $p->discount_price : null;
+            return $p;
+        });
+
         return Inertia::render('Product/Show', [
             'product' => $product,
+            'relatedProducts' => $relatedProducts,
         ]);
     }
 

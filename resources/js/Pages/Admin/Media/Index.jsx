@@ -1,10 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 
-const Index = ({ media, folders, current_folder, filters = {} }) => {
+const Index = ({ media, folders, current_folder, heroImageId = null, instagramImageIds = [] }) => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const [heroImage, setHeroImage] = useState(null);
+    const [heroSelectionId, setHeroSelectionId] = useState(heroImageId);
+    const [instagramSelection, setInstagramSelection] = useState(new Set(instagramImageIds));
     const fileInputRef = useRef(null);
     const { data, setData, post, processing } = useForm({
         files: [],
@@ -45,6 +48,42 @@ const Index = ({ media, folders, current_folder, filters = {} }) => {
 
     const handleFolderChange = (folder) => {
         router.get(route('admin.media.index'), { folder });
+    };
+
+    useEffect(() => {
+        if (heroSelectionId) {
+            const found = media.data.find((item) => item.id === heroSelectionId);
+            if (found) {
+                setHeroImage(found);
+            }
+        }
+    }, [heroSelectionId, media.data]);
+
+    const setAsHero = (id) => {
+        router.post(route('admin.media.set-hero'), { media_id: id }, {
+            onSuccess: () => {
+                setHeroSelectionId(id);
+                const found = media.data.find((item) => item.id === id);
+                setHeroImage(found || null);
+            },
+        });
+    };
+
+    const toggleInstagramImage = (id) => {
+        setInstagramSelection((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const saveInstagramImages = () => {
+        router.post(route('admin.media.set-instagram'), { media_ids: Array.from(instagramSelection) }, {
+            onSuccess: () => {
+                alert('Instagram image selection updated.');
+            },
+        });
     };
 
     const getFileIcon = (mimeType) => {
@@ -119,6 +158,46 @@ const Index = ({ media, folders, current_folder, filters = {} }) => {
                     </form>
                 </div>
 
+                {/* Hero + Instagram Media Settings */}
+                <div className="bg-white rounded-lg shadow p-6">
+                    <h2 className="text-lg font-semibold mb-4">Hero Image & Instagram Section</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="md:col-span-1">
+                            <div className="text-sm font-medium text-gray-700 mb-2">Current Hero Image</div>
+                            {heroImage ? (
+                                <img src={`/storage/${heroImage.path}`} alt="Hero" className="w-full h-32 object-cover rounded-lg border" />
+                            ) : (
+                                <div className="w-full h-32 bg-gray-100 rounded-lg border flex items-center justify-center text-gray-400 text-sm">
+                                    No hero image set
+                                </div>
+                            )}
+                        </div>
+                        <div className="md:col-span-2">
+                            <p className="text-sm text-gray-600 mb-2">Toggle images for Instagram section:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {media.data.filter((item) => item.mime_type.startsWith('image/')).map((item) => (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => toggleInstagramImage(item.id)}
+                                        className={`px-2 py-1 rounded border ${instagramSelection.has(item.id) ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300'}`}
+                                    >
+                                        {instagramSelection.has(item.id) ? '✓ ' : ''}{item.original_filename}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={saveInstagramImages}
+                                className="mt-3 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                Save Instagram Selection
+                            </button>
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-500">Click any image below and choose "Set as Hero" to set the hero image. Use the toggle buttons to select which images appear in the Instagram section.</p>
+                </div>
+
                 {/* Filters */}
                 <div className="bg-white rounded-lg shadow p-4">
                     <div className="flex flex-wrap gap-4 items-center">
@@ -168,12 +247,12 @@ const Index = ({ media, folders, current_folder, filters = {} }) => {
                                         )}
                                     </div>
                                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                        <div className="flex space-x-2">
+                                        <div className="flex flex-col gap-2">
                                             <button
-                                                onClick={() => window.open(`/storage/${item.path}`, '_blank')}
-                                                className="px-3 py-1 bg-white text-gray-900 rounded text-sm hover:bg-gray-100"
+                                                onClick={() => setAsHero(item.id)}
+                                                className={`px-3 py-1 rounded text-sm ${heroSelectionId === item.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 hover:bg-gray-100'}`}
                                             >
-                                                View
+                                                {heroSelectionId === item.id ? 'Hero Image' : 'Set as Hero'}
                                             </button>
                                             <button
                                                 onClick={() => deleteMedia(item.id)}

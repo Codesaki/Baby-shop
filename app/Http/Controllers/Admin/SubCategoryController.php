@@ -35,7 +35,10 @@ class SubCategoryController extends Controller
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
         ]);
-        $data['slug'] = Str::slug($data['name']);
+
+        $baseSlug = Str::slug($data['name']);
+        $data['slug'] = $this->generateUniqueSlug($baseSlug);
+
         SubCategory::create($data);
         return redirect()->route('admin.sub-categories.index')->with('success', 'Sub-category added.');
     }
@@ -52,9 +55,28 @@ class SubCategoryController extends Controller
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
         ]);
-        $data['slug'] = Str::slug($data['name']);
+
+        $baseSlug = Str::slug($data['name']);
+        $data['slug'] = $this->generateUniqueSlug($baseSlug, $subCategory->id);
+
         $subCategory->update($data);
         return redirect()->route('admin.sub-categories.index')->with('success', 'Sub-category updated.');
+    }
+
+    private function generateUniqueSlug(string $baseSlug, int $ignoreId = null)
+    {
+        $slug = $baseSlug;
+        $count = 0;
+
+        while (SubCategory::where('slug', $slug)
+            ->when($ignoreId, fn($q) => $q->where('id', '<>', $ignoreId))
+            ->exists())
+        {
+            $count++;
+            $slug = $baseSlug . '-' . $count;
+        }
+
+        return $slug;
     }
 
     public function destroy(SubCategory $subCategory)

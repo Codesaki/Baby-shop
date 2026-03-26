@@ -106,7 +106,7 @@ export default function Show({ category, products }) {
                                                 </span>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); addToCartQuick(product.id); }}
-                                                    className="px-2 py-1 bg-green-500 text-white rounded-md text-xs"
+                                                    className="px-2 py-1 bg-primary-600 text-white rounded-md text-xs hover:bg-primary-700"
                                                 >
                                                     Add
                                                 </button>

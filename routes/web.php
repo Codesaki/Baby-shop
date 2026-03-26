@@ -131,6 +131,8 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])
 
         // Media Library
         Route::resource('media', MediaController::class)->only(['index', 'store', 'destroy']);
+        Route::post('media/set-hero-image', [MediaController::class, 'setHeroImage'])->name('media.set-hero');
+        Route::post('media/set-instagram-images', [MediaController::class, 'setInstagramImages'])->name('media.set-instagram');
 
         // Analytics & Reports
         Route::prefix('reports')->name('reports.')->group(function () {

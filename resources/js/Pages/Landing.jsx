@@ -1,5 +1,5 @@
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/Layouts/MainLayout';
 
 /** Funny one-liner per category slug (fallback uses name) */
@@ -94,13 +94,6 @@ function CategoryShowcaseSection({ cat, styleIndex, navigate, addToCartQuick }) 
                                             )}
                                         </span>
                                         <div className="flex gap-2">
-                                            <Link
-                                                href={route('products.show', p.slug)}
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="px-3 py-1 bg-primary-500 text-white rounded-md text-sm"
-                                            >
-                                                View
-                                            </Link>
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
@@ -108,7 +101,7 @@ function CategoryShowcaseSection({ cat, styleIndex, navigate, addToCartQuick }) 
                                                     e.stopPropagation();
                                                     addToCartQuick(p.id);
                                                 }}
-                                                className="px-3 py-1 bg-green-500 text-white rounded-md text-sm"
+                                                className="px-3 py-1 bg-primary-600 text-white rounded-md text-sm"
                                             >
                                                 Add
                                             </button>
@@ -131,6 +124,7 @@ function CategoryShowcaseSection({ cat, styleIndex, navigate, addToCartQuick }) 
 /** Admin-defined landing CTAs; carousel auto-advances every 30s when multiple */
 function LandingCtaCarousel({ ctas }) {
     const [idx, setIdx] = useState(0);
+    const [mailingEmail, setMailingEmail] = useState('');
 
     useEffect(() => {
         if (!ctas || ctas.length <= 1) return undefined;
@@ -148,12 +142,26 @@ function LandingCtaCarousel({ ctas }) {
                 >
                     <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to shop?</h2>
                     <p className="text-lg text-white/90 mb-8 max-w-xl">Join happy parents who trust Blimey.</p>
-                    <Link
-                        href={route('landing')}
-                        className="px-10 py-4 bg-white text-primary-600 font-bold rounded-lg shadow-soft-lg hover:bg-light-50"
-                    >
-                        Explore collections
-                    </Link>
+                    <div className="flex items-center gap-2 w-full max-w-md mx-auto">
+                        <input
+                            type="email"
+                            placeholder="Enter your email"
+                            value={mailingEmail}
+                            onChange={(e) => setMailingEmail(e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg text-sm border border-white/70"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!mailingEmail.trim()) return;
+                                alert('Thanks for subscribing!');
+                                setMailingEmail('');
+                            }}
+                            className="px-5 py-2 bg-white text-primary-600 font-bold rounded-lg hover:bg-gray-100"
+                        >
+                            Join
+                        </button>
+                    </div>
                 </div>
             </section>
         );
@@ -197,9 +205,43 @@ function LandingCtaCarousel({ ctas }) {
     );
 }
 
-const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, categoryShowcases = [], landingCtas = [] }) => {
+const Landing = ({
+    featuredProducts,
+    newArrivals,
+    popularProducts,
+    categories,
+    categoryShowcases = [],
+    landingCtas = [],
+    heroImage,
+    instagramImages = [],
+}) => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isContentLoaded, setIsContentLoaded] = useState(false);
+    const [mailingEmail, setMailingEmail] = useState('');
+    const [heroImageId, setHeroImageId] = useState(null);
+    const [selectedInstagramIds, setSelectedInstagramIds] = useState(new Set());
+    const [openFooterSections, setOpenFooterSections] = useState({ Shop: false, Support: false, About: false, Contact: false });
+    const newArrivalsRef = useRef(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsContentLoaded(true), 300);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (!newArrivalsRef.current || newArrivals.length === 0) return;
+        const interval = setInterval(() => {
+            const container = newArrivalsRef.current;
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            if (maxScroll <= 0) return;
+            const step = container.clientWidth;
+            const nextScroll = container.scrollLeft + step;
+            container.scrollTo({ left: nextScroll > maxScroll ? 0 : nextScroll, behavior: 'smooth' });
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [newArrivals]);
 
     const addToCartQuick = (productId) => {
         router.post(route('cart.store'), { product_id: productId, quantity: 1 });
@@ -217,6 +259,25 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    if (!isContentLoaded) {
+        return (
+            <MainLayout>
+                <div className="px-4 py-10 max-w-7xl mx-auto">
+                    <div className="animate-pulse rounded-xl bg-blue-100 h-[60vh] mb-6" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className="animate-pulse rounded-lg bg-blue-100 h-56" />
+                        <div className="animate-pulse rounded-lg bg-blue-100 h-56" />
+                    </div>
+                    <div className="space-y-4">
+                        <div className="animate-pulse rounded-lg bg-blue-100 h-40" />
+                        <div className="animate-pulse rounded-lg bg-blue-100 h-40" />
+                        <div className="animate-pulse rounded-lg bg-blue-100 h-40" />
+                    </div>
+                </div>
+            </MainLayout>
+        );
+    }
 
     const navLinks = [
         { name: 'Baby Care', slug: 'baby-care' },
@@ -267,7 +328,7 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
     const featuredProductsData = featuredProducts || [];
     const newArrivalsData = newArrivals || [];
 
-    const instagramImages = [
+    const defaultInstagramImages = [
         'https://images.unsplash.com/photo-1516685018646-549b5b3c3f0d?w=800&h=800&fit=crop',
         'https://images.unsplash.com/photo-1505059945225-50b9b35f3f8d?w=800&h=800&fit=crop',
         'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=800&fit=crop',
@@ -275,12 +336,6 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
         'https://images.unsplash.com/photo-1529516543401-5f3c6a0f2b6a?w=800&h=800&fit=crop',
         'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=800&fit=crop',
     ];
-
-    const [openFooterSections, setOpenFooterSections] = useState({ Shop: false, Support: false, About: false, Contact: false });
-
-    const toggleFooterSection = (key) => {
-        setOpenFooterSections((s) => ({ ...s, [key]: !s[key] }));
-    };
 
     const firstThreeCategories = (categoryShowcases || []).slice(0, 3);
     const restCategories = (categoryShowcases || []).slice(3);
@@ -294,7 +349,7 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                 <section id="hero" className="min-h-[60vh] flex flex-col">
                     <div className="relative h-[65vh] w-full overflow-hidden rounded-b-2xl">
                         <img
-                            src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200&h=800&fit=crop"
+                            src={heroImage || 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200&h=800&fit=crop'}
                             alt="Mom and baby"
                             className="w-full h-full object-cover"
                         />
@@ -398,12 +453,12 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                     <div className="max-w-7xl mx-auto">
                         <h3 className="text-lg font-bold mb-3 px-1">Popular Right Now</h3>
                         {featuredProductsData.length > 0 ? (
-                            <div className="flex gap-4 overflow-x-auto pb-3 px-1 lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible">
+                            <div className="flex gap-4 overflow-x-auto pb-3 px-1">
                                 {featuredProductsData.map((p) => (
                                     <div
                                         key={p.id}
                                         onClick={() => navigate(p.slug)}
-                                        className="cursor-pointer block min-w-[60%] sm:min-w-[40%] lg:min-w-0 lg:w-full bg-white rounded-xl shadow-soft overflow-hidden hover:shadow-soft-lg transition-shadow"
+                                        className="cursor-pointer block min-w-[60%] sm:min-w-[45%] md:min-w-[30%] lg:min-w-[22%] bg-white rounded-xl shadow-soft overflow-hidden hover:shadow-soft-lg transition-shadow"
                                     >
                                         <div className="h-44 md:h-52 bg-gray-100">
                                             <img src={p.images && p.images.length ? `/storage/${p.images[0].image_path}` : ''} alt={p.name} className="w-full h-full object-cover" />
@@ -423,16 +478,13 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                                                     )}
                                                 </span>
                                                 <div className="flex gap-2">
-                                                    <Link href={route('products.show', p.slug)} className="px-3 py-1 bg-primary-500 text-white rounded-md text-sm">
-                                                        View
-                                                    </Link>
                                                     <button
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
                                                             addToCartQuick(p.id);
                                                         }}
-                                                        className="px-3 py-1 bg-green-500 text-white rounded-md text-sm"
+                                                        className="px-3 py-1 bg-primary-600 text-white rounded-md text-sm"
                                                     >
                                                         Add
                                                     </button>
@@ -480,12 +532,12 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                     <div className="max-w-7xl mx-auto">
                         <h3 className="text-lg font-bold mb-3 px-1">New Arrivals</h3>
                         {newArrivalsData.length > 0 ? (
-                            <div className="flex gap-4 overflow-x-auto pb-3 px-1 lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible">
+                            <div ref={newArrivalsRef} className="flex gap-4 overflow-x-auto pb-3 px-1">
                                 {newArrivals.map((p) => (
                                     <div
                                         key={p.id}
                                         onClick={() => navigate(p.slug)}
-                                        className="block min-w-[60%] sm:min-w-[40%] lg:min-w-0 lg:w-full bg-white rounded-xl shadow-soft overflow-hidden hover:shadow-soft-lg transition-shadow cursor-pointer"
+                                        className="block min-w-[60%] sm:min-w-[45%] md:min-w-[30%] lg:min-w-[22%] bg-white rounded-xl shadow-soft overflow-hidden hover:shadow-soft-lg transition-shadow cursor-pointer"
                                     >
                                         <div className="h-44 md:h-52 bg-gray-100">
                                             <img src={p.images && p.images.length ? `/storage/${p.images[0].image_path}` : ''} alt={p.name} className="w-full h-full object-cover" />
@@ -505,10 +557,9 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                                                     )}
                                                 </span>
                                                 <div className="flex gap-2">
-                                                    <Link href={route('products.show', p.slug)} className="px-3 py-1 bg-primary-500 text-white rounded-md text-sm">View</Link>
-                                                    <button
+                                                        <button
                                                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCartQuick(p.id); }}
-                                                        className="px-3 py-1 bg-green-500 text-white rounded-md text-sm"
+                                                        className="px-3 py-1 bg-primary-600 text-white rounded-md text-sm"
                                                     >
                                                         Add
                                                     </button>
@@ -541,9 +592,9 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                                 <p className="text-sm md:text-base text-light-700 mb-4">
                                     Comfortable essentials, self-care items, and thoughtful gifts for new mothers.
                                 </p>
-                                <button className="inline-flex justify-center px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 self-start">
+                                <Link href={route('categories.show', 'mommy')} className="inline-flex justify-center px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 self-start">
                                     Shop Mommy Essentials
-                                </button>
+                                </Link>
                             </div>
                         </div>
 
@@ -584,33 +635,14 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                     </div>
                 </section>
 
-                {/* Email Signup */}
-                <section className="px-4 pb-10">
-                    <div className="max-w-md mx-auto bg-white rounded-xl p-5 shadow-soft">
-                        <h4 className="font-bold mb-2 text-center">Join our mailing list</h4>
-                        <p className="text-xs text-light-600 mb-3 text-center">
-                            Be the first to know about new arrivals, offers, and parenting tips.
-                        </p>
-                        <div className="flex gap-2">
-                            <input
-                                type="email"
-                                placeholder="Your email"
-                                className="flex-1 border border-light-200 rounded-md px-3 py-2 text-sm"
-                            />
-                            <button className="px-4 py-2 bg-primary-500 text-white rounded-md text-sm whitespace-nowrap">
-                                Subscribe
-                            </button>
-                        </div>
-                    </div>
-                </section>
 
                 {/* Instagram Grid */}
                 <section className="px-4 pb-12">
                     <div className="max-w-5xl mx-auto">
                         <h3 className="text-lg font-bold mb-4">From Instagram</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            {instagramImages.slice(0, 8).map((src, i) => (
-                                <a key={i} href="#" className="block overflow-hidden rounded-lg">
+                            {(instagramImages && instagramImages.length > 0 ? instagramImages : defaultInstagramImages).slice(0, 8).map((src, i) => (
+                                <a key={i} href="https://instagram.com" target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
                                     <div className="aspect-square">
                                         <img src={src} alt={`insta-${i}`} className="w-full h-full object-cover" />
                                     </div>
@@ -643,86 +675,7 @@ const Landing = ({ featuredProducts, newArrivals, popularProducts, categories, c
                     />
                 ))}
 
-                {/* Footer */}
-                <footer id="contact" className="bg-light-200 py-16 border-t border-light-300">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                            {/* Brand */}
-                            <div>
-                                <div className="flex items-center gap-2 mb-4">
-                                                <i className="fa-solid fa-baby text-3xl"></i>
-                                    <div className="font-architects text-xl text-blue-600 leading-none">
-                                        Blimey
-                                        <div className="text-xs font-sans text-blue-600 -mt-1">
-                                            Baby Shop
-                                        </div>
-                                    </div>
-                                </div>
-                                <p className="text-sm text-light-700">
-                                    Your trusted partner in providing the best products for your little ones.
-                                </p>
-                            </div>
-
-                            {/* Quick Links */}
-                            <div>
-                                <h4 className="font-bold text-light-900 mb-4">
-                                    Shop
-                                </h4>
-                                <ul className="space-y-2 text-sm text-light-700">
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Clothing</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Toys</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Feeding</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Nursery</a></li>
-                                </ul>
-                            </div>
-
-                            {/* Support */}
-                            <div>
-                                <h4 className="font-bold text-light-900 mb-4">
-                                    Support
-                                </h4>
-                                <ul className="space-y-2 text-sm text-light-700">
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Contact Us</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">FAQ</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Shipping</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Returns</a></li>
-                                </ul>
-                            </div>
-
-                            {/* Legal */}
-                            <div>
-                                <h4 className="font-bold text-light-900 mb-4">
-                                    Legal
-                                </h4>
-                                <ul className="space-y-2 text-sm text-light-700">
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Privacy</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Terms</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Cookies</a></li>
-                                    <li><a href="#" className="hover:text-primary-500 transition-colors">Accessibility</a></li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        {/* Bottom Bar */}
-                        <div className="border-t border-light-300 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center">
-                            <p className="text-sm text-light-700">
-                                © 2026 Blimey Baby Shop. All rights reserved.
-                            </p>
-                            <div className="flex gap-4 mt-4 md:mt-0">
-                                <a href="#" className="text-light-700 hover:text-primary-500 transition-colors">
-                                    Facebook
-                                </a>
-                                <a href="#" className="text-light-700 hover:text-primary-500 transition-colors">
-                                    Instagram
-                                </a>
-                                <a href="#" className="text-light-700 hover:text-primary-500 transition-colors">
-                                    TikTok
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
-            </MainLayout>
+                            </MainLayout>
         </>
     );
 };

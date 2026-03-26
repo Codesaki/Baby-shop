@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 
-const Show = ({ product }) => {
+const Show = ({ product, relatedProducts = [] }) => {
     const [selectedImage, setSelectedImage] = useState(0);
     const [showLightbox, setShowLightbox] = useState(false);
     // quantity is managed via useForm below
@@ -209,6 +209,34 @@ const Show = ({ product }) => {
                             <p className="text-gray-700 whitespace-pre-line">{product.long_description}</p>
                         </div>
                     </div>
+
+                    {/* Related Products */}
+                    {relatedProducts && relatedProducts.length > 0 && (
+                        <div className="mt-10 max-w-7xl">
+                            <h3 className="text-2xl font-bold mb-4">Related Products</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {relatedProducts.map((item) => (
+                                    <Link
+                                        key={item.id}
+                                        href={route('products.show', item.slug)}
+                                        className="group bg-white rounded-xl shadow-soft overflow-hidden hover:shadow-soft-lg transition-all duration-200"
+                                    >
+                                        <div className="aspect-square bg-gray-100">
+                                            <img
+                                                src={item.images && item.images.length ? `/storage/${item.images[0].image_path}` : ''}
+                                                alt={item.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="p-3">
+                                            <h4 className="font-medium text-sm md:text-base line-clamp-2">{item.name}</h4>
+                                            <p className="text-sm text-primary-600 mt-1">Ksh {item.price.toFixed(2)}</p>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Lightbox Modal */}
                     {showLightbox && (

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\LandingCta;
 use App\Models\Product;
+use App\Models\Media;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -81,7 +83,7 @@ class LandingController extends Controller
                 ->where('quantity', '>', 0)
                 ->with('images')
                 ->latest()
-                ->take(12)
+                ->take(8)
                 ->get();
 
             return [
@@ -99,6 +101,23 @@ class LandingController extends Controller
             ->orderBy('id')
             ->get();
 
+        $heroImageId = Setting::get('hero_image_id');
+        $heroImage = null;
+        if ($heroImageId) {
+            $heroMedia = Media::find($heroImageId);
+            if ($heroMedia) {
+                $heroImage = '/storage/'.$heroMedia->path;
+            }
+        }
+
+        $instagramImageIds = Setting::get('instagram_image_ids', []); 
+        $instagramImages = [];
+        if (is_array($instagramImageIds) && count($instagramImageIds) > 0) {
+            $instagramImages = Media::whereIn('id', $instagramImageIds)->get()->map(function ($media) {
+                return '/storage/'.$media->path;
+            })->toArray();
+        }
+
         return Inertia::render('Landing', [
             'featuredProducts' => $featuredProducts,
             'newArrivals' => $newArrivals,
@@ -106,6 +125,8 @@ class LandingController extends Controller
             'categories' => $categories,
             'categoryShowcases' => $categoryShowcases,
             'landingCtas' => $landingCtas,
+            'heroImage' => $heroImage,
+            'instagramImages' => $instagramImages,
         ]);
     }
 }

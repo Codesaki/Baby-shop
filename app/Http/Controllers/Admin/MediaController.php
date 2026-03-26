@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Media;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -29,10 +30,15 @@ class MediaController extends Controller
             ->distinct()
             ->pluck('folder');
 
+        $heroImageId = Setting::get('hero_image_id');
+        $instagramImageIds = Setting::get('instagram_image_ids', []);
+
         return Inertia::render('Admin/Media/Index', [
             'media' => $media,
             'folders' => $folders,
             'current_folder' => $request->folder,
+            'heroImageId' => $heroImageId,
+            'instagramImageIds' => $instagramImageIds,
         ]);
     }
 
@@ -70,4 +76,28 @@ class MediaController extends Controller
 
         return redirect()->back()->with('success', 'Media deleted successfully.');
     }
+
+    public function setHeroImage(Request $request)
+    {
+        $validated = $request->validate([
+            'media_id' => 'required|exists:media,id',
+        ]);
+
+        Setting::set('hero_image_id', $validated['media_id'], 'integer', 'Hero image media ID');
+
+        return redirect()->back()->with('success', 'Hero image updated successfully.');
+    }
+
+    public function setInstagramImages(Request $request)
+    {
+        $validated = $request->validate([
+            'media_ids' => 'required|array|min:1|max:12',
+            'media_ids.*' => 'required|exists:media,id',
+        ]);
+
+        Setting::set('instagram_image_ids', $validated['media_ids'], 'array', 'Instagram carousel media IDs');
+
+        return redirect()->back()->with('success', 'Instagram section images updated successfully.');
+    }
 }
+
