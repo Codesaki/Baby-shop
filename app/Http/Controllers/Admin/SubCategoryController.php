@@ -7,6 +7,8 @@ use App\Models\Category;
 use App\Models\SubCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class SubCategoryController extends Controller
@@ -32,15 +34,24 @@ class SubCategoryController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', Rule::unique('sub_categories')->where(function ($query) use ($request) {
+                return $query->where('category_id', $request->category_id);
+            })],
             'category_id' => 'required|exists:categories,id',
+        ], [
+            'name.unique' => 'This sub-category already exists for this category.',
         ]);
 
-        $baseSlug = Str::slug($data['name']);
-        $data['slug'] = $this->generateUniqueSlug($baseSlug);
+        $data['slug'] = Str::slug($data['name']);
+
+        if (SubCategory::where('slug', $data['slug'])->exists()) {
+            return back()
+                ->withErrors(['name' => 'This sub-category slug already exists. Please choose a different name.'])
+                ->withInput();
+        }
 
         SubCategory::create($data);
-        return redirect()->route('admin.sub-categories.index')->with('success', 'Sub-category added.');
+        return redirect()->route('admin.catalog.sub-categories.index')->with('success', 'Sub-category added.');
     }
 
     public function edit(SubCategory $subCategory)
@@ -52,15 +63,24 @@ class SubCategoryController extends Controller
     public function update(Request $request, SubCategory $subCategory)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', Rule::unique('sub_categories')->where(function ($query) use ($request, $subCategory) {
+                return $query->where('category_id', $request->category_id)->where('id', '<>', $subCategory->id);
+            })],
             'category_id' => 'required|exists:categories,id',
+        ], [
+            'name.unique' => 'This sub-category already exists for this category.',
         ]);
 
-        $baseSlug = Str::slug($data['name']);
-        $data['slug'] = $this->generateUniqueSlug($baseSlug, $subCategory->id);
+        $data['slug'] = Str::slug($data['name']);
+
+        if (SubCategory::where('slug', $data['slug'])->where('id', '<>', $subCategory->id)->exists()) {
+            return back()
+                ->withErrors(['name' => 'This sub-category slug already exists. Please choose a different name.'])
+                ->withInput();
+        }
 
         $subCategory->update($data);
-        return redirect()->route('admin.sub-categories.index')->with('success', 'Sub-category updated.');
+        return redirect()->route('admin.catalog.sub-categories.index')->with('success', 'Sub-category updated.');
     }
 
     private function generateUniqueSlug(string $baseSlug, int $ignoreId = null)
