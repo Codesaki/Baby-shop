@@ -91,18 +91,18 @@ class CartController extends Controller
         if ($item->variant_id) {
             $variant = $item->variant;
             if ($variant->stock_quantity < $request->quantity) {
-                return response()->json(['error' => 'Insufficient stock.'], 422);
+                return back()->withErrors(['quantity' => 'Insufficient stock for this variant.']);
             }
         } else {
             $product = $item->product;
             if ($product->quantity < $request->quantity) {
-                return response()->json(['error' => 'Insufficient stock.'], 422);
+                return back()->withErrors(['quantity' => 'Insufficient stock.']);
             }
         }
 
         $item->update(['quantity' => $request->quantity]);
 
-        return response()->json(['success' => true]);
+        return back();
     }
 
     public function destroy(CartItem $item)
