@@ -38,6 +38,10 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Capture guest cart BEFORE authentication (which may regenerate session)
+        $oldSessionId = Session::getId();
+        $guestCart = Cart::where('session_id', $oldSessionId)->first();
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -48,8 +52,10 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        // Migrate session-based cart to user-based cart
-        $this->migrateGuestCartToUserCart();
+        // Migrate captured guest cart to user's cart
+        if ($guestCart) {
+            $this->migrateGuestCartToUserCart($guestCart, $user->id);
+        }
 
         return redirect(route('dashboard', absolute: false));
     }
@@ -57,13 +63,10 @@ class RegisteredUserController extends Controller
     /**
      * Migrate guest cart items to authenticated user's cart.
      */
-    private function migrateGuestCartToUserCart()
+    private function migrateGuestCartToUserCart($guestCart, $userId)
     {
-        $sessionId = Session::getId();
-        $guestCart = Cart::where('session_id', $sessionId)->first();
-
-        if ($guestCart && $guestCart->items->count() > 0) {
-            $userCart = Cart::firstOrCreate(['user_id' => Auth::id()]);
+        if ($guestCart->items->count() > 0) {
+            $userCart = Cart::firstOrCreate(['user_id' => $userId]);
 
             // Move items from guest cart to user cart
             foreach ($guestCart->items as $item) {
