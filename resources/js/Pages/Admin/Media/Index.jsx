@@ -288,13 +288,13 @@ const Index = ({ media, folders, current_folder, heroImageId = null, instagramIm
                                 {media.links.map((link, index) => (
                                     <Link
                                         key={index}
-                                        href={link.url}
+                                        href={link.url || '#'}
                                         className={`px-3 py-2 text-sm border rounded ${
                                             link.active
                                                 ? 'bg-blue-600 text-white border-blue-600'
                                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                                         } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        dangerouslySetInnerHTML={{ __html: link.label || '...' }}
                                     />
                                 ))}
                             </div>

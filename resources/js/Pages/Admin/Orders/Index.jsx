@@ -286,13 +286,13 @@ export default function Index({ orders, stats, filters = {} }) {
                                                         ? 'bg-blue-600 text-white'
                                                         : 'bg-white text-gray-700 hover:bg-gray-50 border'
                                                 }`}
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                dangerouslySetInnerHTML={{ __html: link.label || '...' }}
                                             />
                                         ) : (
                                             <span
                                                 key={index}
                                                 className="px-3 py-2 text-sm rounded-md bg-white text-gray-400 cursor-not-allowed"
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                dangerouslySetInnerHTML={{ __html: link.label || '...' }}
                                             />
                                         )
                                     ))}

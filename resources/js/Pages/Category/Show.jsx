@@ -123,7 +123,7 @@ export default function Show({ category, products }) {
                                         {products.links.map((link, index) => (
                                             <Link
                                                 key={index}
-                                                href={link.url}
+                                                href={link.url || '#'}
                                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                                     link.active
                                                         ? 'bg-primary-600 text-white'
@@ -131,7 +131,7 @@ export default function Show({ category, products }) {
                                                         ? 'bg-white text-light-700 hover:bg-light-50 border border-light-200'
                                                         : 'bg-light-100 text-light-400 cursor-not-allowed'
                                                 }`}
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                dangerouslySetInnerHTML={{ __html: link.label || '...' }}
                                             />
                                         ))}
                                     </div>
